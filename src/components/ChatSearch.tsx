@@ -1,0 +1,11 @@
+import { useEffect, useRef, useState } from 'react';
+import { searchChats, type SearchHit } from '../workflow/search';
+import { useAppStore } from '../codex/store';
+import { session } from '../codex/session';
+import { errorMessage } from '../codex/transport';
+export default function ChatSearch(){
+ const [query,setQuery]=useState('');const [hits,setHits]=useState<SearchHit[]>([]);const [status,setStatus]=useState('');const [running,setRunning]=useState(false);const abort=useRef<AbortController|null>(null);
+ const busy=useAppStore(s=>!!s.activeTurn||s.submissionPending||s.threadLoading);const ready=useAppStore(s=>s.connection.state==='ready');
+ useEffect(()=>()=>abort.current?.abort(),[]);
+ return <details className="chat-search-all"><summary>Search all chat contents</summary><form onSubmit={e=>{e.preventDefault();abort.current?.abort();const control=new AbortController();abort.current=control;setHits([]);setRunning(true);setStatus('Searching…');void searchChats(query,(results,count,errors)=>{setHits(results);setStatus(`${results.length} matches · ${count} chats searched${errors?` · ${errors} histories unavailable`:''}`);},control.signal).catch(e=>{if(!control.signal.aborted)setStatus(errorMessage(e));}).finally(()=>{if(abort.current===control)setRunning(false);});}}><label>Search messages, code, and errors<input value={query} onChange={e=>setQuery(e.target.value)}/></label><button className="btn" disabled={!ready||!query.trim()||running}>Search all projects</button>{running&&<button className="btn" type="button" onClick={()=>{abort.current?.abort();setRunning(false);setStatus(s=>s+' · stopped');}}>Stop search</button>}</form><small>Searches both companions and all non-archived projects without opening conversations.</small><p role="status">{status}</p>{hits.map(hit=><button key={hit.thread.id} className="search-hit" disabled={busy} onClick={()=>{const s=useAppStore.getState();s.upsertThread(hit.thread);s.switchCharacter(s.settings.threadCharacters[hit.thread.id]??'mommy');void session.openThread(hit.thread.id).catch(e=>setStatus(errorMessage(e)));}}><b>{hit.thread.name||hit.thread.preview||'Untitled conversation'}</b><small>{hit.thread.cwd}</small><span>{hit.text}</span></button>)}</details>;
+}

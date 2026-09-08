@@ -6,7 +6,7 @@ export interface Verification {id:string;cwd:string;threadId:string|null;status:
 const STORAGE='mommycodex.harness.v1';
 function restored():QueueTask[]{try {const value=JSON.parse(localStorage.getItem(STORAGE)||'[]');return Array.isArray(value)?value.filter(t=>typeof t.id==='string'&&typeof t.cwd==='string'&&typeof t.text==='string').map(t=>({...t,status:t.status==='running'?'interrupted':t.status})):[];}catch{return [];}}
 export const useHarnessStore=create<{
-  open:boolean;tab:'preview'|'queue'|'memory'|'checkpoints'|'handoff'|'github';memories:Record<string,ProjectMemory>;checkpoints:Record<string,Checkpoint[]>;
+  open:boolean;tab:'preview'|'queue'|'memory'|'checkpoints'|'handoff'|'github'|'recipes'|'timeline'|'release';memories:Record<string,ProjectMemory>;checkpoints:Record<string,Checkpoint[]>;
   queue:QueueTask[];queuePaused:boolean;busy:boolean;browser:BrowserSnapshot|null;verification:Verification|null;
 }>(()=>({open:false,tab:'preview',memories:{},checkpoints:{},queue:restored(),queuePaused:true,busy:false,browser:null,verification:null}));
 useHarnessStore.subscribe((s,p)=>{if(s.queue!==p.queue){try{localStorage.setItem(STORAGE,JSON.stringify(s.queue));}catch{ /* UI remains usable without persistent browser storage. */ }}});

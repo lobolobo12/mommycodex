@@ -1,3 +1,5 @@
+import FileLink from './FileLink';
+import VisualComparison from './VisualComparison';
 import { useState } from 'react';
 import { checkpointFiles, type Checkpoint, type ReviewFile } from '../harness/api';
 import { harness } from '../harness/controller';
@@ -7,13 +9,15 @@ import { errorMessage } from '../codex/transport';
 export default function ChangeReview({cwd,checkpoint:c}:{cwd:string;checkpoint:Checkpoint}){
   const [files,setFiles]=useState<ReviewFile[]|null>(null);
   const [error,setError]=useState('');const [loading,setLoading]=useState(false);
+  const reviewEnabled=useAppStore(s=>s.settings.reviewBeforeKeeping);
   const busy=useHarnessStore(s=>s.busy);const running=useAppStore(s=>!!s.activeTurn||s.submissionPending);
   async function run(fn:()=>Promise<unknown>){setError('');setLoading(true);try{await fn();}catch(e){setError(errorMessage(e));}finally{setLoading(false);}}
   return <article className="checkpoint-card">
     <strong>{c.label||'Coding task'}</strong><small>{new Date(c.createdAt*1000).toLocaleString()} · {c.status}</small>
-    {c.status==='pending'&&<p role="status">Proposal ready. Starting files have been restored. Review these changes, then accept or discard.</p>}
+    {c.status==='pending'&&<p role="status">{reviewEnabled?'Proposal ready. Starting files have been restored. Review these changes, then accept or discard.':'Review is off. This waiting proposal will be applied automatically before your next task. You can also accept or discard it below.'}</p>}
     <button className="btn btn-ghost" disabled={loading||c.status==='running'} onClick={()=>void run(async()=>setFiles(await checkpointFiles(cwd,c.id)))}>{files?'Refresh file comparison':`Review ${c.changed.length} changed files`}</button>
-    {files&&<div className="review-files">{files.map(f=><details key={f.path}><summary><b>{f.kind}</b> <code>{f.path}</code></summary>{f.binary?<p>Binary or large file. Contents are preserved in the snapshot; text preview is unavailable.</p>:<div className="file-comparison"><section><b>Before</b><pre>{f.before??'(File did not exist)'}</pre></section><section><b>Proposed</b><pre>{f.after??'(File deleted)'}</pre></section></div>}</details>)}</div>}
+    {files&&<div className="review-files">{files.map(f=><details key={f.path}><summary><b>{f.kind}</b> <FileLink cwd={cwd} path={f.path}><code>{f.path}</code></FileLink></summary>{f.binary?<p>Binary or large file. Contents are preserved in the snapshot; text preview is unavailable.</p>:<div className="file-comparison"><section><b>Before</b><pre>{f.before??'(File did not exist)'}</pre></section><section><b>Proposed</b><pre>{f.after??'(File deleted)'}</pre></section></div>}</details>)}</div>}
+    <VisualComparison id={c.id}/>
     {error&&<p role="alert" className="workbench-error">{error}</p>}
     <div className="workbench-actions">
       {c.status==='pending'&&<><button className="btn btn-primary" disabled={busy||running||loading||!files} onClick={()=>void run(()=>harness.reviewDecision(cwd,c.id,'accept'))}>Accept changes</button><button className="btn" disabled={busy||running||loading} onClick={()=>void run(()=>harness.reviewDecision(cwd,c.id,'discard'))}>Discard proposal</button></>}

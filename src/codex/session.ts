@@ -1,3 +1,4 @@
+import { btw } from './btw';
 /**
  * Owns the Codex protocol conversation: boot handshake, threads, turns,
  * approvals routing, delta batching and crash recovery. UI components only
@@ -378,6 +379,7 @@ export class CodexSession {
   // ------------------------------------------------------------ dispatch
 
   dispatch(msg: BridgeMessage): void {
+    if (btw.handle(msg)) return;
     switch (msg.type) {
       case "notification": {
         if (msg.method === "turn/completed") this.lastCompletedTurnId = (msg.params as { turn: { id: string } }).turn.id;
@@ -412,6 +414,7 @@ export class CodexSession {
         return;
       }
       case "exited": {
+        btw.disconnected();
         this.flushDeltas();
         this.deltaQueue.clear();
         this.store.clearRequests();

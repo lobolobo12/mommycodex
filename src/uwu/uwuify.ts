@@ -176,7 +176,7 @@ function transformWord(tok: string, ctx: Ctx): string {
   const lower = core.toLowerCase();
   if (ctx.protect.has(lower)) return tok;
   if (ctx.protectProperNouns && !wasSentenceStart && /^[A-Z][a-z]/.test(core)) return tok;
-  if (core.length === 1) return tok;
+  if (core.length === 1 && !(ctx.intensity >= 3 && ctx.stutter && wasSentenceStart && lower === "i")) return tok;
 
   let out = applyLetters(core, ctx.intensity);
 
@@ -184,10 +184,11 @@ function transformWord(tok: string, ctx: Ctx): string {
     ctx.stutter &&
     ctx.intensity >= 2 &&
     wasSentenceStart &&
-    /^[A-Za-z]{3}/.test(out) &&
+    (ctx.intensity >= 3 ? /^[A-Za-z]/ : /^[A-Za-z]{3}/).test(out) &&
     !/^([A-Za-z])-\1/i.test(core)
   ) {
-    const divisor = ctx.intensity >= 3 ? 2 : 4;
+    // Maximum mode deliberately stutters every eligible opening; lower levels remain lighter.
+    const divisor = ctx.intensity >= 3 ? 1 : 4;
     const sentenceNo = endsSentence ? ctx.state.sentenceIndex - 1 : ctx.state.sentenceIndex;
     if (mix(ctx.hash, sentenceNo) % divisor === 0) {
       out = `${out[0]}-${out}`;

@@ -1,3 +1,4 @@
+import * as visual from '../workflow/visual';
 import { beforeEach,afterEach,describe,it,expect,vi } from 'vitest';
 import { HarnessController } from './controller';
 import { useHarnessStore } from './state';
@@ -26,6 +27,15 @@ describe('project memory and snapshots',()=>{
  it('captures before a task and finalizes once even with duplicate completion',async()=>{const h=new HarnessController();await h.beforeTask('/tmp/project','thread','fix');await h.completed('thread',done());await h.completed('thread',done());expect(api.checkpointStart).toHaveBeenCalledBefore(vi.mocked(api.checkpointFinish));expect(api.checkpointFinish).toHaveBeenCalledTimes(1);});
  it('does not finalize a checkpoint when a follow-up is rejected',async()=>{const s=new CodexSession();const h=new HarnessController();s.extensions=h;await h.beforeTask('/tmp/project','thread','task');useAppStore.setState({activeThreadId:'thread',activeTurn:{threadId:'thread',turnId:'turn',status:'inProgress'}});vi.spyOn(transport,'rpc').mockRejectedValue(Error('rejected'));await expect(s.send('follow up')).rejects.toThrow('rejected');expect(api.checkpointFinish).not.toHaveBeenCalled();});
 });
+it('captures visual evidence before proposal restoration',async()=>{
+ const capture=vi.spyOn(visual,'captureComparison').mockResolvedValue();
+ useAppStore.getState().updateSettings({reviewBeforeKeeping:true});
+ const h=new HarnessController();await h.beforeTask('/tmp/project','thread','fix');
+ expect(capture).toHaveBeenNthCalledWith(1,'/tmp/project','1','before');
+ await h.completed('thread',done());
+ expect(capture).toHaveBeenNthCalledWith(2,'/tmp/project','1','after');
+ expect(capture.mock.invocationCallOrder[1]).toBeLessThan(vi.mocked(api.checkpointReview).mock.invocationCallOrder[0]);
+});
 describe('task queue',()=>{
  it('runs FIFO in the saved project and waits for completion before the next task',async()=>{
   const h=new HarnessController();const project=vi.spyOn(session,'setCwd').mockResolvedValue();vi.spyOn(session,'newThread').mockResolvedValue('thread');const send=vi.spyOn(session,'send').mockResolvedValue();
@@ -44,8 +54,27 @@ describe('bounded verification',()=>{
 });
 
 describe('review proposals',()=>{
+ it('defaults to automatic changes and keeps completed edits without pausing the queue',async()=>{
+  expect(DEFAULT_SETTINGS.reviewBeforeKeeping).toBe(false);
+  useHarnessStore.setState({queuePaused:false});const h=new HarnessController();
+  await h.beforeTask('/tmp/project','thread','change');await h.completed('thread',done());
+  expect(api.checkpointFinish).toHaveBeenCalledTimes(1);expect(api.checkpointReview).not.toHaveBeenCalled();
+  expect(useHarnessStore.getState().queuePaused).toBe(false);
+ });
+ it('applies waiting proposals before taking the next baseline when review is off',async()=>{
+  vi.mocked(api.checkpointList).mockResolvedValue([{id:'old',label:'task',threadId:'thread',createdAt:1,status:'pending',changed:['a.ts'],error:null}]);
+  const h=new HarnessController();await h.beforeTask('/tmp/project','thread','next');
+  expect(api.checkpointReview).toHaveBeenCalledWith('/tmp/project','old','accept');
+  expect(api.checkpointReview).toHaveBeenCalledBefore(vi.mocked(api.checkpointStart));
+ });
+ it('does not overwrite a conflicting proposal even with automatic changes enabled',async()=>{
+  vi.mocked(api.checkpointList).mockResolvedValue([{id:'old',label:'task',threadId:'thread',createdAt:1,status:'pending',changed:['a.ts'],error:null}]);
+  vi.mocked(api.checkpointReview).mockRejectedValue(Error('Newer edit conflicts'));
+  await expect(new HarnessController().beforeTask('/tmp/project','thread','next')).rejects.toThrow('Newer edit conflicts');
+  expect(api.checkpointStart).not.toHaveBeenCalled();
+ });
  it('stages completed edits and pauses the queue for review',async()=>{useAppStore.getState().updateSettings({reviewBeforeKeeping:true});const h=new HarnessController();await h.beforeTask('/tmp/project','thread','change');await h.completed('thread',done());expect(api.checkpointReview).toHaveBeenCalledWith('/tmp/project','1','stage');expect(useHarnessStore.getState()).toMatchObject({open:true,tab:'checkpoints',queuePaused:true});});
- it('blocks new work when a persisted proposal is pending',async()=>{vi.mocked(api.checkpointList).mockResolvedValue([{id:'1',label:'task',threadId:'thread',createdAt:1,status:'pending',changed:['a.ts'],error:null}]);const h=new HarnessController();await expect(h.beforeTask('/tmp/project','thread','next')).rejects.toThrow('Accept or discard');expect(api.checkpointStart).not.toHaveBeenCalled();});
+ it('blocks new work when review is enabled and a persisted proposal is pending',async()=>{useAppStore.getState().updateSettings({reviewBeforeKeeping:true});vi.mocked(api.checkpointList).mockResolvedValue([{id:'1',label:'task',threadId:'thread',createdAt:1,status:'pending',changed:['a.ts'],error:null}]);const h=new HarnessController();await expect(h.beforeTask('/tmp/project','thread','next')).rejects.toThrow('Accept or discard');expect(api.checkpointStart).not.toHaveBeenCalled();});
 });
 it('keeps verification attempts in one proposal and stages only after final checks',async()=>{
  useAppStore.getState().updateSettings({reviewBeforeKeeping:true});

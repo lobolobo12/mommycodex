@@ -1,3 +1,4 @@
+import BtwPanel from './BtwPanel';
 import type { Attachment } from "../codex/attachments";
 import { useEffect, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
@@ -112,6 +113,7 @@ export default function ChatPane() {
         })}
       </div>
       {(connection.state === "error" || connection.state === "crashed") && <div className="connection-notice" role="status"><Icon name="activity" size={16} /><span>Codex is offline. Use reconnect above to try again.</span></div>}
+      <BtwPanel/>
       <Composer attachments={attachments} setAttachments={setAttachments} text={draft} setText={setDraft} inputRef={composerRef} />
     </main>
   );

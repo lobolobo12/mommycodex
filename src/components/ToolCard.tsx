@@ -1,3 +1,4 @@
+import FileLink from './FileLink';
 import ErrorRecovery from "./ErrorRecovery";
 import type { ItemState } from "../codex/store";
 import Icon from "./Icon";
@@ -86,7 +87,7 @@ export default function ToolCard({ item }: { item: ItemState }) {
                 {n > 0 && (
                   <>
                     {" · "}
-                    <code>{it.changes.map((c) => c.path).join(", ")}</code>
+                    <span>{it.changes.map((c,i)=><span key={c.path}>{i>0?", ":""}<FileLink path={c.path}><code>{c.path}</code></FileLink></span>)}</span>
                   </>
                 )}
               </span>
@@ -97,7 +98,7 @@ export default function ToolCard({ item }: { item: ItemState }) {
                 <details key={`${c.path}-${i}`}>
                   <summary className="file">
                     <span className="pill">{c.kind.type}{c.kind.type === "update" && c.kind.move_path ? ` → ${c.kind.move_path}` : ""}</span>
-                    <code>{c.path}</code>
+                    <FileLink path={c.path}><code>{c.path}</code></FileLink>
                   </summary>
                   <Diff diff={c.diff} />
                 </details>

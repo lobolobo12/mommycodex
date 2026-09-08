@@ -1,0 +1,14 @@
+import { UwuMarkdown } from './MessageBubble';
+import { useAppStore } from '../codex/store';
+import { styleMarkdown } from '../uwu/markdown';
+import { useEffect, useRef } from 'react';
+import { previewFile, useFileStore } from '../workflow/files';
+export default function FilePreviewPanel(){
+ const settings=useAppStore(s=>s.settings);
+ const intensity=settings.seriousMode||settings.character==='nyx'?0:3;
+ const s=useFileStore();
+ const markdown=/\.(md|markdown)$/i.test(s.path);
+ const saveStyled=()=>{if(!s.file?.text||s.file.truncated)return;const content=styleMarkdown(s.file.text,intensity);const url=URL.createObjectURL(new Blob([content],{type:'text/markdown;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download=(s.path.split(/[\\/]/).pop()??'document.md').replace(/\.(md|markdown)$/i,'.mommy.md');a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};const lineRef=useRef<HTMLSpanElement>(null);
+ useEffect(()=>{lineRef.current?.scrollIntoView({block:'center'});},[s.file,s.line,s.view]);
+ return <aside className="workbench card file-preview" aria-label="File preview"><header className="workbench-heading"><div><span className="section-label">File preview</span><h2>{s.path.split(/[\\/]/).pop()}</h2></div><button className="btn btn-ghost" aria-label="Close file preview" onClick={()=>useFileStore.setState({open:false})}>×</button></header><div className="file-preview-info"><code>{s.path}</code><small>{s.cwd}</small><button className="btn btn-ghost" disabled={s.loading} onClick={()=>void previewFile(`${s.path}:${s.line}`,s.cwd,s.view)}>Refresh file</button>{markdown&&<div className="workbench-actions"><button className="btn" aria-pressed={s.view==='chat'} onClick={()=>useFileStore.setState({view:'chat'})}>Chat voice</button><button className="btn" aria-pressed={s.view==='source'} onClick={()=>useFileStore.setState({view:'source'})}>Original source</button><button className="btn btn-primary" disabled={!s.file?.text||s.file.truncated||s.loading} onClick={saveStyled}>Save styled Markdown</button></div>}</div><div className="file-preview-content">{s.loading?<p role="status">Loading file…</p>:s.error?<p role="alert">{s.error}</p>:s.file?.image?<img src={s.file.image} alt={s.path}/>:s.file?.binary?<p>Binary file · {s.file.size.toLocaleString()} bytes. Text preview is unavailable.</p>:s.file?<><p className="hint">Current file · {s.file.size.toLocaleString()} bytes{s.file.truncated?' · showing the first 512 KB':''}</p>{markdown&&s.view==='chat'?<><p className="hint">Automatic chat styling · original file preserved</p><UwuMarkdown text={s.file.text??''} intensity={intensity}/></>:<pre>{s.file.text?.split('\n').map((line,i)=><span ref={i+1===s.line?lineRef:undefined} className={i+1===s.line?'selected-line':''} key={i}><span className="line-number" aria-hidden="true">{i+1}</span>{line||' '}<br/></span>)}</pre>}</>:null}</div></aside>;
+}

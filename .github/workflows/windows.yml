@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['src/**', 'src-tauri/**', 'scripts/**', 'package.json', 'pnpm-lock.yaml', '.github/workflows/windows.yml']
+    paths: ['persona/**', 'src/**', 'src-tauri/**', 'scripts/**', 'package.json', 'pnpm-lock.yaml', '.github/workflows/windows.yml']
 permissions:
   contents: read
 jobs:
@@ -28,6 +28,12 @@ jobs:
       - run: npm install --global @openai/codex@0.153.4
       - run: pnpm test
       - run: pnpm build
+      - name: Verify new workbench and chat workflows
+        run: |
+          node scripts/additions-ui.test.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'Workbench UI tests failed' }
+          node scripts/btw-files-ui.test.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'Chat and Markdown UI tests failed' }
       - run: cargo test --manifest-path src-tauri/Cargo.toml --locked
         env:
           MOMMYCODEX_TEST_INSTALLED_CODEX: '1'

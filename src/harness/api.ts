@@ -17,3 +17,6 @@ export const checkpointFiles=(cwd:string,id:string)=>invoke<ReviewFile[]>('check
 export const checkpointReview=(cwd:string,id:string,action:'stage'|'accept'|'discard')=>invoke<Checkpoint>('checkpoint_review',{cwd,id,action});
 
 export const githubAction=<T=unknown>(cwd:string,action:string,params:Record<string,unknown>={})=>invoke<T>('github_action',{cwd,action,params});
+
+export interface ProjectFile {path:string;size:number;text:string|null;image:string|null;binary:boolean;truncated:boolean}
+export const projectFileRead=(cwd:string,path:string)=>invoke<ProjectFile>('project_file_read',{cwd,path});

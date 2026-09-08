@@ -1,3 +1,4 @@
+import { captureComparison } from '../workflow/visual';
 import { saveHandoff } from "../hub/controller";
 import { useHubStore } from "../hub/state";
 import { session } from '../codex/session';
@@ -43,8 +44,13 @@ export class HarnessController implements SessionExtensions {
     if(useHarnessStore.getState().busy)throw Error('Wait for checkpoint processing to finish.');
     if(verification?.status==='running'&&this.captures.has(threadId))return;
     await this.refreshCheckpoints(cwd);
-    if(useHarnessStore.getState().checkpoints[cwd]?.some(c=>c.status==='pending')){useHarnessStore.setState({open:true,tab:'checkpoints'});throw Error('Accept or discard the waiting proposal before starting another task.');}
+    const pending=useHarnessStore.getState().checkpoints[cwd]?.filter(c=>c.status==='pending')??[];
+    if(pending.length&&useAppStore.getState().settings.reviewBeforeKeeping){useHarnessStore.setState({open:true,tab:'checkpoints'});throw Error('Accept or discard the waiting proposal, or turn off Review before keeping changes.');}
+    // Disabling review keeps prior proposals too, before the next task captures its baseline.
+    // The native restore still refuses to overwrite conflicting newer edits.
+    for(const proposal of pending)await api.checkpointReview(cwd,proposal.id,'accept');
     const capture=await api.checkpointStart(cwd,threadId,text||'Task with attachments');
+    await captureComparison(cwd,capture.id,'before');
     this.captures.set(threadId,{cwd,id:capture.id,review:useAppStore.getState().settings.reviewBeforeKeeping});await this.refreshCheckpoints(cwd);
   }
   async failed(threadId:string|null,error:unknown){
@@ -56,6 +62,7 @@ export class HarnessController implements SessionExtensions {
     const capture=this.captures.get(threadId);if(!capture)return;
     this.captures.delete(threadId);
     try {
+      await captureComparison(capture.cwd,capture.id,'after');
       const c=await api.checkpointFinish(capture.cwd,capture.id);
       if(capture.review&&c.changed.length){
         await api.checkpointReview(capture.cwd,capture.id,'stage');

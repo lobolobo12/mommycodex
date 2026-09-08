@@ -12,3 +12,9 @@ describe('slash commands',()=>{
  it('rechecks busy guards after the menu opens and rejects invalid arguments',async()=>{const command=commands().find(c=>c.name==='building')!;useAppStore.setState({submissionPending:true});await expect(runCommand(command,'on')).rejects.toThrow('Finish or stop');expect(useAppStore.getState().settings.mommyBuilding).toBe(false);useAppStore.setState({submissionPending:false});await expect(runCommand(command,'maybe')).rejects.toThrow('Choose a value');});
  it('does not enable paid voice without a configured key',async()=>{vi.mocked(transport.speechKeyStatus).mockResolvedValue(false);await expect(runCommand(commands().find(c=>c.name==='voice')!,'on')).rejects.toThrow('Fish API key');expect(useAppStore.getState().settings.ttsAutoRead).toBe(false);});
 });
+
+it('offers /btw arguments without splitting the question and accepts optional mommy-md topics',()=>{
+ expect(commandOptions('/btw Why this?\nExplain it.')[0].argument).toBe('Why this?\nExplain it.');
+ expect(commandOptions('/mommy-md docs/guide.md')[0].argument).toBe('docs/guide.md');
+ expect(commandOptions('/mommy-md')[0].command.optionalArgument).toBe(true);
+});

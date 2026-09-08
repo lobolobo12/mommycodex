@@ -1,5 +1,7 @@
+import FileLink from './FileLink';
+import { fileTarget } from '../workflow/files';
 import { useMemo, type ReactNode } from "react";
-import Markdown from "react-markdown";
+import Markdown, { defaultUrlTransform } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { PluggableList } from "unified";
 import { characterName } from "../persona";
@@ -36,7 +38,14 @@ function CodeBlock(props: { children?: ReactNode }) {
   );
 }
 
-const components = { pre: CodeBlock };
+const components = {
+  pre: CodeBlock,
+  a: ({href,children}:{href?:string;children?:ReactNode}) => href && fileTarget(href) ? <FileLink path={href}>{children}</FileLink> : <a href={href} target="_blank" rel="noreferrer">{children}</a>,
+  code: ({children,className}:{children?:ReactNode;className?:string}) => {
+    const text=extractText(children);
+    return !className&&!text.includes('\n')&&fileTarget(text)?<FileLink path={text}><code>{children}</code></FileLink>:<code className={className}>{children}</code>;
+  },
+};
 
 export function UwuMarkdown({ text, intensity, seed }: { text: string; intensity: 0 | 1 | 2 | 3; seed?: number }) {
   const plugins = useMemo<PluggableList>(
@@ -45,7 +54,7 @@ export function UwuMarkdown({ text, intensity, seed }: { text: string; intensity
   );
   return (
     <div className="md">
-      <Markdown remarkPlugins={plugins} components={components}>
+      <Markdown urlTransform={url=>fileTarget(url)?url:defaultUrlTransform(url)} remarkPlugins={plugins} components={components}>
         {text}
       </Markdown>
     </div>

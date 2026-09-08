@@ -1,3 +1,5 @@
+import ReviewToggle from './ReviewToggle';
+import { useWorkflowStore } from '../workflow/state';
 import { useCommandUI } from "../commands";
 import { useState } from "react";
 import { session } from "../codex/session";
@@ -9,6 +11,7 @@ import SpeechSettings from "./SpeechSettings";
 import { speech, useSpeechStore } from "../speech/controller";
 
 export default function TopBar() {
+  const focus = useWorkflowStore(s=>s.focus);
   const connection = useAppStore((s) => s.connection);
   const settings = useAppStore((s) => s.settings);
   const update = useAppStore((s) => s.updateSettings);
@@ -47,6 +50,7 @@ export default function TopBar() {
         <span>Mommy<span className="brand-accent">Codex</span><small>Your cozy coding space</small></span>
       </div>
       <div className="spacer" />
+      <button className="btn btn-ghost" aria-pressed={focus} onClick={()=>useWorkflowStore.setState({focus:!focus})}>{focus?"Exit focus":"Focus mode"}</button>
       <span className="model-status" title="Use /model and /effort to change these">{model?.displayName || settings.model || "Codex"} · {effortValue || "default"}</span>
 
       <div className={`conn ${connection.state}`} title={connLabel}>
@@ -65,6 +69,7 @@ export default function TopBar() {
         </summary>
         <div className="settings-panel card">
           <div className="settings-heading">Make yourself at home</div>
+          <ReviewToggle />
           <SpeechSettings />
           <label>
             approvals reviewer

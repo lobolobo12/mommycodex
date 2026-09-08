@@ -31,7 +31,7 @@ export const DEFAULT_SETTINGS: Settings = {
   character: "mommy",
   reactionVoice: false,
   companionNotes: "",
-  reviewBeforeKeeping: true,
+  reviewBeforeKeeping: false,
   threadCharacters: {},
   lastCompanionThread: {},
   companionPreferences: {},

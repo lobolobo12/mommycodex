@@ -1,3 +1,5 @@
+import ReviewToggle from './ReviewToggle';
+import { Recipes, Timeline, ReleaseAssistant } from './WorkflowPanels';
 import GitHubPanel from "./GitHubPanel";
 import ErrorRecovery from "./ErrorRecovery";
 import { session } from "../codex/session";
@@ -29,10 +31,10 @@ export default function Workbench(){
   const act=(params:Record<string,unknown>)=>void run(()=>harness.preview(params));
   return <aside className="workbench card" aria-label="Project workbench">
     <header className="workbench-heading"><div><span className="section-label">Your workshop</span><h2>Build, see, improve</h2></div><button className="btn btn-ghost" aria-label="Close workbench" onClick={()=>useHarnessStore.setState({open:false})}><Icon name="close" size={17}/></button></header>
-    <nav className="workbench-tabs" aria-label="Workbench sections">{(['preview','queue','memory','checkpoints','handoff','github'] as const).map(tab=><button key={tab} aria-pressed={h.tab===tab} onClick={()=>useHarnessStore.setState({tab})}>{tab==='memory'?'Project memory':tab==='checkpoints'?'Review & undo':tab==='handoff'?'Handoff':tab==='github'?'GitHub':tab==='queue'?`Queue ${h.queue.filter(t=>t.status==='queued').length}`:'Preview'}</button>)}</nav>
+    <nav className="workbench-tabs" aria-label="Workbench sections">{(['preview','queue','memory','checkpoints','handoff','github','recipes','timeline','release'] as const).map(tab=><button key={tab} aria-pressed={h.tab===tab} onClick={()=>useHarnessStore.setState({tab})}>{tab==='recipes'?'Recipes':tab==='timeline'?'Timeline':tab==='release'?'Release':tab==='memory'?'Project memory':tab==='checkpoints'?'Review & undo':tab==='handoff'?'Handoff':tab==='github'?'GitHub':tab==='queue'?`Queue ${h.queue.filter(t=>t.status==='queued').length}`:'Preview'}</button>)}</nav>
     {error&&<div className="workbench-error" role="alert">{error}<button aria-label="Dismiss workbench error" onClick={()=>setError('')}>×</button></div>}
     <div className="workbench-content">
-    {!cwd?<p>Choose a project to use the workbench.</p>:h.tab==='github'?<GitHubPanel cwd={cwd}/>:h.tab==='handoff'?<HandoffPanel cwd={cwd}/>:h.tab==='memory'?<form className="memory-form" onSubmit={e=>{e.preventDefault();setSaving(true);void run(()=>harness.saveMemory(cwd,memory).then(()=>setUrl(memory.previewUrl))).finally(()=>setSaving(false));}}>
+    {!cwd?<p>Choose a project to use the workbench.</p>:h.tab==='recipes'?<Recipes key={cwd} cwd={cwd}/>:h.tab==='timeline'?<Timeline key={cwd} cwd={cwd}/>:h.tab==='release'?<ReleaseAssistant key={cwd} cwd={cwd}/>:h.tab==='github'?<GitHubPanel cwd={cwd}/>:h.tab==='handoff'?<HandoffPanel cwd={cwd}/>:h.tab==='memory'?<form className="memory-form" onSubmit={e=>{e.preventDefault();setSaving(true);void run(()=>harness.saveMemory(cwd,memory).then(()=>setUrl(memory.previewUrl))).finally(()=>setSaving(false));}}>
       <p>Saved for this project and included in future tasks. Changes apply on the next message.</p>
       <label>Preferred stack<textarea value={memory.stack} placeholder="React, TypeScript, Tailwind…" onChange={e=>setMemory({...memory,stack:e.target.value})}/></label>
       <label>Design and project preferences<textarea rows={5} value={memory.preferences} placeholder="Design choices, conventions, things to remember…" onChange={e=>setMemory({...memory,preferences:e.target.value})}/></label>
@@ -48,6 +50,7 @@ export default function Workbench(){
       <ol className="queue-list">{h.queue.map(task=><li key={task.id}><div className="queue-title">{task.text}</div><small>{task.cwd.split(/[\\/]/).pop()} · {task.status}</small>{task.error&&<p className="workbench-error">{task.error}</p>}<div className="workbench-actions">{['queued','running'].includes(task.status)&&<button className="btn btn-ghost" onClick={()=>void run(()=>harness.cancelTask(task.id))}>Cancel task</button>}{['failed','cancelled','interrupted'].includes(task.status)&&<button className="btn btn-ghost" onClick={()=>harness.retryTask(task.id)}>Queue again</button>}</div></li>)}</ol>
       {!h.queue.length&&<div className="workbench-empty">A little room for your next big ideas.</div>}
     </>:h.tab==='checkpoints'?<>
+      <ReviewToggle/>
       <p>Review before keeping saves the task’s proposed source changes, then restores the starting files until you accept. Tasks temporarily edit project files while running. Undo preserves pre-existing edits and stops if a newer edit conflicts.</p>
       <p className="hint">Source files only: Git-ignored files, dependencies and common build folders are excluded. Limits: 20,000 files / 256 MB. Git staging stays unchanged.</p>
       <button className="btn btn-ghost" onClick={()=>void run(()=>harness.refreshCheckpoints(cwd))}>Refresh checkpoints</button>

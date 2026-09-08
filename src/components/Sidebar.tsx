@@ -1,3 +1,4 @@
+import ChatSearch from './ChatSearch';
 import { useHubStore } from "../hub/state";
 import { useState } from "react";
 import { useShallow } from "zustand/react/shallow";
@@ -128,6 +129,7 @@ export default function Sidebar() {
       </button>
       <div className="section-label threads-label">{character==='nyx'?'Nyx’s chats':'Mommy-chan’s chats'} <span>{threads.length}</span></div>
       <label className="thread-search"><Icon name="search" size={14} /><input aria-label="Search conversations" placeholder="Search conversations…" value={query} onChange={(e) => setQuery(e.target.value)} />{query && <button aria-label="Clear conversation search" onClick={() => setQuery("")}><Icon name="close" size={12} /></button>}</label>
+      <ChatSearch/>
       <div className="thread-list">
         {threads.length === 0 && <div className="empty"><Icon name="chat" size={26} /><b>A fresh start</b><span>Your conversations will<br />feel right at home here.</span></div>}
         {query.trim() && visibleThreads.length === 0 && threads.length > 0 && <div className="empty">No matching conversations.</div>}

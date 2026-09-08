@@ -79,6 +79,7 @@ pub fn run() {
             workspace::checkpoint_list,
             workspace::checkpoint_review,
             workspace::checkpoint_files,
+            workspace::project_file_read,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

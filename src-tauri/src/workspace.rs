@@ -451,6 +451,53 @@ fn decide_proposal(base: &Path, cwd: &Path, key: &str, action: &str) -> Result<C
     atomic_json(&dir.join("record.json"), &record)?;
     Ok(record.info)
 }
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProjectFile {
+    path: String,
+    size: u64,
+    text: Option<String>,
+    image: Option<String>,
+    binary: bool,
+    truncated: bool,
+}
+fn read_project_file(cwd: &str, name: &str) -> Result<ProjectFile> {
+    use std::io::Read;
+    use base64::Engine;
+    let project = root(cwd)?;
+    let requested = Path::new(name);
+    let path = fs::canonicalize(if requested.is_absolute() { requested.to_path_buf() } else { project.join(requested) }).map_err(err)?;
+    if !path.starts_with(&project) { return Err("File preview is limited to the selected project.".into()); }
+    if !fs::metadata(&path).map_err(err)?.is_file() { return Err("Choose a regular file to preview.".into()); }
+    let file = fs::File::open(&path).map_err(err)?;
+    let metadata = file.metadata().map_err(err)?;
+    if !metadata.is_file() { return Err("Choose a regular file to preview.".into()); }
+    let extension = path.extension().and_then(|e| e.to_str()).unwrap_or("").to_ascii_lowercase();
+    let mime = match extension.as_str() { "png" => Some("image/png"), "jpg" | "jpeg" => Some("image/jpeg"), "gif" => Some("image/gif"), "webp" => Some("image/webp"), _ => None };
+    let limit = if mime.is_some() { 5 * 1024 * 1024 } else { 512 * 1024 };
+    let mut bytes = Vec::new();
+    file.take(limit + 1).read_to_end(&mut bytes).map_err(err)?;
+    let truncated = bytes.len() as u64 > limit;
+    bytes.truncate(limit as usize);
+    let mut result = ProjectFile { path: path.to_string_lossy().into_owned(), size: metadata.len(), text: None, image: None, binary: false, truncated };
+    if let Some(mime) = mime {
+        if truncated { return Err("Image is too large to preview (maximum 5 MB).".into()); }
+        result.image = Some(format!("data:{mime};base64,{}", base64::engine::general_purpose::STANDARD.encode(bytes)));
+    } else if bytes.contains(&0) { result.binary = true; }
+    else {
+        match String::from_utf8(bytes) {
+            Ok(text) => result.text = Some(text),
+            Err(error) if truncated && error.utf8_error().error_len().is_none() => result.text = Some(String::from_utf8_lossy(&error.into_bytes()).into_owned()),
+            Err(_) => result.binary = true,
+        }
+    }
+    Ok(result)
+}
+#[tauri::command]
+pub async fn project_file_read(cwd: String, path: String) -> Result<ProjectFile> {
+    tauri::async_runtime::spawn_blocking(move || read_project_file(&cwd, &path)).await.map_err(err)?
+}
+
 #[tauri::command]
 pub async fn checkpoint_review(app: tauri::AppHandle, cwd: String, id: String, action: String) -> Result<Checkpoint> {
     tauri::async_runtime::spawn_blocking(move || {
@@ -665,5 +712,31 @@ mod tests {
         std::os::unix::fs::symlink(outside.path(), p.path().join("dir")).unwrap();
         assert!(undo(b.path(), p.path(), &c.id).is_err());
         assert!(!outside.path().join("a").exists());
+    }
+}
+
+#[cfg(test)]
+mod file_preview_tests {
+    use super::*;
+    #[test]
+    fn previews_text_images_binary_and_bounds_large_files() {
+        let dir = tempfile::tempdir().unwrap(); let cwd = dir.path().to_str().unwrap();
+        fs::write(dir.path().join("file.ts"), "const x = 1;\n").unwrap();
+        assert_eq!(read_project_file(cwd, "file.ts").unwrap().text.unwrap(), "const x = 1;\n");
+        fs::write(dir.path().join("binary.dat"), [0,1,2]).unwrap();
+        assert!(read_project_file(cwd, "binary.dat").unwrap().binary);
+        fs::write(dir.path().join("image.png"), [137,80,78,71]).unwrap();
+        assert!(read_project_file(cwd, "image.png").unwrap().image.unwrap().starts_with("data:image/png;base64,"));
+        fs::write(dir.path().join("large.txt"), vec![b'x'; 600_000]).unwrap();
+        let preview = read_project_file(cwd, "large.txt").unwrap();
+        assert!(preview.truncated); assert_eq!(preview.text.unwrap().len(), 512 * 1024);
+        assert!(read_project_file(cwd, ".").is_err()); assert!(read_project_file(cwd, "missing").is_err());
+    }
+    #[test]
+    fn refuses_outside_project_and_symlink_escapes() {
+        let dir = tempfile::tempdir().unwrap();let outside = tempfile::tempdir().unwrap();
+        let path = outside.path().join("secret.txt");fs::write(&path,"private").unwrap();
+        assert!(read_project_file(dir.path().to_str().unwrap(),path.to_str().unwrap()).is_err());
+        #[cfg(unix)] { std::os::unix::fs::symlink(&path,dir.path().join("link.txt")).unwrap();assert!(read_project_file(dir.path().to_str().unwrap(),"link.txt").is_err()); }
     }
 }

@@ -1,3 +1,7 @@
+import FilePreviewPanel from './components/FilePreviewPanel';
+import { useFileStore } from './workflow/files';
+import FocusView from './components/FocusView';
+import { useWorkflowStore } from './workflow/state';
 import ProjectLaunchpad from "./components/ProjectLaunchpad";
 import { useHubStore } from "./hub/state";
 import { installHub } from "./hub/controller";
@@ -18,6 +22,9 @@ import { speech, useSpeechStore } from "./speech/controller";
 import { useAppStore } from "./codex/store";
 
 export default function App() {
+  const fileOpen = useFileStore(s=>s.open);
+  const focus = useWorkflowStore(s=>s.focus);
+  const storageError = useWorkflowStore(s=>s.storageError);
   const launchpadOpen = useHubStore(s=>s.open);
   useEffect(()=>installHub(),[]);
   const workbenchOpen = useHarnessStore(s => s.open);
@@ -57,10 +64,15 @@ export default function App() {
     <div className="app">
       <TopBar />
       <div className="app-body">
+        {focus && <FocusView/>}
+        <div className="workspace-panels" hidden={focus}>
         <Sidebar />
         <ChatPane />
-        {workbenchOpen ? <Workbench /> : <MascotPanel />}
+        {fileOpen && <FilePreviewPanel/>}
+        <div className="workspace-panels" hidden={fileOpen}>{workbenchOpen ? <Workbench /> : <MascotPanel />}</div>
+        </div>
       </div>
+      {storageError && <div className="workflow-storage-error" role="alert">{storageError}</div>}
       {launchpadOpen && <ProjectLaunchpad/>}
       <ApprovalModal />
       <Toasts />

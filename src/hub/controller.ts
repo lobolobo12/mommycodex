@@ -1,3 +1,4 @@
+import { recordTimeline } from '../workflow/state';
 import { useAppStore } from '../codex/store';
 import { session } from '../codex/session';
 import { harness } from '../harness/controller';
@@ -12,6 +13,9 @@ export function saveHandoff(threadId:string,turn:Turn){
  const changedFiles=Array.from(new Set(items.flatMap(i=>i.type==='fileChange'?i.changes.map(c=>c.path):[])));
  const checks=items.flatMap(i=>i.type==='commandExecution'&&i.exitCode!==null&&/\b(test|vitest|pytest|check|typecheck|build)\b/.test(i.command)?[{command:i.command,exitCode:i.exitCode,output:(i.aggregatedOutput??'').slice(-3000)}]:[]).slice(-8);
  patchHandoff(cwd,{checks,threadId,status:turn.status,updatedAt:Date.now(),summary:last?.type==='agentMessage'?last.text.slice(0,12000):turn.error?.message??`Task ${turn.status}; no final summary was received.`,remaining:plan.filter(p=>p.status!=='completed').map(p=>p.step),changedFiles});
+ const handoff=useHubStore.getState().handoffs[cwd];
+ const checkpoint=useHarnessStore.getState().checkpoints[cwd]?.filter(c=>c.threadId===threadId).sort((a,b)=>b.createdAt-a.createdAt)[0];
+ recordTimeline({...handoff,id:turn.id,checkpointId:checkpoint?.id});
 }
 export async function openProject(project:RecentProject,preview=false){
  const s=useAppStore.getState();if(s.activeTurn||s.submissionPending||s.threadLoading||useHarnessStore.getState().busy)throw Error('Finish or stop the current task first.');

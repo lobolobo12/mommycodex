@@ -208,3 +208,9 @@ describe("Mommy mode across turns", () => {
     expect(rpc.mock.calls.map(([method]) => method)).toEqual(["thread/resume", "thread/inject_items", "turn/start"]);
   });
 });
+
+it('allows explicitly requested styled Markdown while keeping technical tokens exact',()=>{
+ const prompt=buildPersonaInstructions({character:'mommy'});
+ expect(prompt).toContain('/mommy-md');expect(prompt).toContain('exception to the prose-only default');
+ expect(prompt).toContain('Keep all technical tokens exact');expect(prompt).toContain('affectionate stutters');
+});

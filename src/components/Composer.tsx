@@ -1,3 +1,4 @@
+import { useBtwStore } from '../codex/btw';
 import SlashMenu from "./SlashMenu";
 import { commands, commandOptions, runCommand, type CommandOption } from "../commands";
 import { useDictationStore } from "../speech/dictation";
@@ -10,6 +11,7 @@ import Icon from "./Icon";
 import { MAX_ATTACHMENTS, readAttachment, type Attachment } from "../codex/attachments";
 
 export default function Composer({ attachments, setAttachments, text, setText, inputRef: ref }: { attachments: Attachment[]; setAttachments: Dispatch<SetStateAction<Attachment[]>>; text: string; setText: Dispatch<SetStateAction<string>>; inputRef: RefObject<HTMLTextAreaElement | null> }) {
+  useBtwStore(s=>s.status);
   const voiceBusy = useDictationStore(s => s.status !== "idle");
   const connection = useAppStore((s) => s.connection);
   const activeTurn = useAppStore((s) => s.activeTurn);
@@ -28,7 +30,7 @@ export default function Composer({ attachments, setAttachments, text, setText, i
   const [commandBusy, setCommandBusy] = useState(false);
   const commandLock = useRef(false);
   const [useAsReference, setUseAsReference] = useState(true);
-  const isCommand = /^\/[a-z-]*(?:\s.*)?$/i.test(text) && !text.includes("\n");
+  const isCommand = /^\/(?:btw|mommy-md)(?:\s|$)/i.test(text) || /^\/[a-z-]*(?:\s.*)?$/i.test(text) && !text.includes("\n");
   const options = isCommand ? commandOptions(text,[...commands(),{name:"help",description:"Show all available commands",run:()=>setText("/")},{name:"reference",description:"Use attached images as building references",value:useAsReference?"on":"off",choices:[{value:"on",label:"Use the visual style"},{value:"off",label:"Attach without a build-style instruction"}],run:value=>setUseAsReference(value==="on")}]) : [];
   const menuOpen = isCommand && !dismissed;
   const selected = Math.min(commandIndex, Math.max(0, options.length - 1));
@@ -36,12 +38,13 @@ export default function Composer({ attachments, setAttachments, text, setText, i
   const choose = async (option: CommandOption) => {
     if (commandLock.current) return;
     if (option.disabled) { pushToast("warning", option.disabled); return; }
-    if (option.command.choices && option.argument === undefined) {
+    if ((option.command.choices && option.argument === undefined) || (option.command.argumentHint && !option.command.optionalArgument && !option.argument?.trim())) {
       setText(`/${option.command.name} `); ref.current?.focus(); return;
     }
     commandLock.current = true; setCommandBusy(true);
     const original = text;
     try {
+      if (option.command.name === "btw" && attachments.length) throw Error("/btw uses recent chat text. Remove attachments or send them in the main chat.");
       await runCommand(option.command, option.argument);
       setText(current => current === original ? "" : current);
       pushToast("info", `${option.label} applied`);
@@ -141,7 +144,7 @@ export default function Composer({ attachments, setAttachments, text, setText, i
             if (menuOpen && ["ArrowDown", "ArrowUp", "Tab", "Escape"].includes(e.key)) {
               e.preventDefault();
               if (e.key === "Escape") setDismissed(true);
-              else if (e.key === "Tab" && options[selected]) { setText(options[selected].label + (options[selected].command.choices && options[selected].argument === undefined ? " " : "")); }
+              else if (e.key === "Tab" && options[selected]) { setText(options[selected].label + ((options[selected].command.choices || options[selected].command.argumentHint) && options[selected].argument === undefined ? " " : "")); }
               else if (options.length) setCommandIndex((selected + (e.key === "ArrowUp" ? -1 : 1) + options.length) % options.length);
               return;
             }
@@ -172,7 +175,7 @@ export default function Composer({ attachments, setAttachments, text, setText, i
         </div>
       </div>
       <div className="hint">
-        {runningHere && reviewing ? "Reviewing changes · Esc to stop" : runningHere ? "Add a follow-up while Codex works · Esc to stop" : activeTurn ? "Another conversation is running" : <><kbd>/</kbd> for commands <span>·</span> <kbd>↵</kbd> to send <span>·</span> drop or paste a reference <span>·</span> <kbd>shift ↵</kbd> for a new line</>}
+        {runningHere && reviewing ? "Reviewing changes · Esc to stop" : runningHere ? "Follow up to steer · /btw for a side question · Esc to stop" : activeTurn ? "Another conversation is running" : <><kbd>/</kbd> for commands <span>·</span> <kbd>↵</kbd> to send <span>·</span> drop or paste a reference <span>·</span> <kbd>shift ↵</kbd> for a new line</>}
       </div>
     </div>
   );

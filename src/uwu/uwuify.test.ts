@@ -93,3 +93,11 @@ describe("uwuify", () => {
     );
   });
 });
+
+it('maximum mode consistently stutters eligible openings including short words',()=>{
+ for(let seed=0;seed<32;seed++){
+  expect(uwuify('Hello darling.',{intensity:3,seed})).toBe('H-Hewwo dawwing~');
+  expect(uwuify('Oh, I can help. I will check.',{intensity:3,seed})).toBe('O-Oh, I can hewp~ I-I wiww check~');
+ }
+ expect(uwuify('M-Mommy can help.',{intensity:3})).toBe('M-Mommy can hewp~');
+});
