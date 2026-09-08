@@ -21,7 +21,7 @@ export class SpeechController {
     try {
       await speakText(id, text, ttsSpeed, ttsFishModel, () => {
         if (id === this.latest) useSpeechStore.setState({ status: "playing" });
-      }, character);
+      }, character, source === "manual" || source === "preview");
     } catch (error) {
       if (id === this.latest) useAppStore.getState().pushToast("error", `Read aloud: ${errorMessage(error)}`);
     } finally {

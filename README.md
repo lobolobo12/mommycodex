@@ -114,7 +114,10 @@ You can draft while disconnected; sending becomes available once Codex and a pro
   [Mommy voice by Velenuvia](https://fish.audio/m/60bd8f0f5bbc462a8fa1686dd81af336/).
   In Settings → Mommy's voice, save a [Fish API key](https://fish.audio/app/api-keys/),
   preview the voice, choose a speed, and optionally enable auto-read. The key lives in
-  macOS Keychain or Windows Credential Manager and never in chat settings or Codex prompts. The free developer tier
+  macOS Keychain or Windows Credential Manager and never in chat settings or Codex prompts.
+  Key status checks never ask for a password. macOS may need one explicit approval when you
+  click Try voice or read a reply after an app update; the unlocked key is reused in native
+  memory until the app quits, and automatic speech never opens a Keychain dialog. The free developer tier
   is selected initially; Standard uses Fish API credits. The app does not silently
   switch tiers. Spoken reply text is sent to Fish Audio, with code, URLs, and decorative
   faces removed. Auto-read speaks only new successful final replies in the selected

@@ -94,9 +94,9 @@ export function stderrTail(): Promise<string[]> {
 export function speechKeyStatus(): Promise<boolean> { return invoke("speech_key_status"); }
 export function saveSpeechKey(apiKey: string): Promise<void> { return invoke("speech_save_key", { apiKey }); }
 export function removeSpeechKey(): Promise<void> { return invoke("speech_remove_key"); }
-export function speakText(requestId: number, text: string, speed: number, model: string, onPlaying: () => void, character: "mommy" | "nyx" = "mommy"): Promise<void> {
+export function speakText(requestId: number, text: string, speed: number, model: string, onPlaying: () => void, character: "mommy" | "nyx" = "mommy", allowKeyPrompt = false): Promise<void> {
   const onEvent = new Channel<string>();
   onEvent.onmessage = (event) => { if (event === "playing") onPlaying(); };
-  return invoke("speech_speak", { requestId, text, speed, model, character, onEvent });
+  return invoke("speech_speak", { requestId, text, speed, model, character, allowKeyPrompt, onEvent });
 }
 export function stopSpeech(requestId: number): Promise<void> { return invoke("speech_stop", { requestId }); }

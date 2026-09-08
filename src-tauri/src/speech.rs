@@ -15,29 +15,58 @@ const KEY_SERVICE: &str = "com.lovrobor.mommycodex.fish-audio";
 const KEY_ACCOUNT: &str = "api-key";
 const MAX_AUDIO: usize = 20 * 1024 * 1024;
 
+// Cache only in native process memory; never in settings or the webview.
+static KEY_CACHE: Mutex<Option<zeroize::Zeroizing<String>>> = Mutex::new(None);
+fn cached_key(cache: &mut Option<zeroize::Zeroizing<String>>, read: impl FnOnce() -> Result<Option<String>, String>) -> Result<Option<String>, String> {
+    if let Some(key) = cache { return Ok(Some(key.to_string())); }
+    let key = read()?;
+    if let Some(key) = &key { *cache = Some(zeroize::Zeroizing::new(key.clone())); }
+    Ok(key)
+}
+fn read_key(allow_prompt: bool) -> Result<Option<String>, String> {
+    let mut cache = KEY_CACHE.lock().map_err(|_| "Voice key state unavailable")?;
+    cached_key(&mut cache, || read_platform_key(allow_prompt))
+}
 #[cfg(target_os = "macos")]
-fn read_key() -> Result<Option<String>, String> {
-    match security_framework::passwords::get_generic_password(KEY_SERVICE, KEY_ACCOUNT) {
-        Ok(bytes) => String::from_utf8(bytes)
-            .map(Some)
-            .map_err(|_| "The saved Fish API key is invalid. Replace it in Settings.".into()),
+fn key_search(data: bool) -> security_framework::item::ItemSearchOptions {
+    use security_framework::item::{ItemClass, ItemSearchOptions};
+    let mut search = ItemSearchOptions::new();
+    search.class(ItemClass::generic_password()).service(KEY_SERVICE).account(KEY_ACCOUNT)
+        .load_data(data).load_attributes(!data).skip_authenticated_items(true);
+    search
+}
+#[cfg(target_os = "macos")]
+fn read_platform_key(allow_prompt: bool) -> Result<Option<String>, String> {
+    use security_framework::item::SearchResult;
+    let result = if allow_prompt {
+        security_framework::passwords::get_generic_password(KEY_SERVICE, KEY_ACCOUNT)
+    } else {
+        key_search(true).search().map(|results| results.into_iter().find_map(|r| match r { SearchResult::Data(bytes) => Some(bytes), _ => None }).unwrap_or_default())
+    };
+    match result {
+        Ok(bytes) if !bytes.is_empty() => String::from_utf8(bytes).map(Some).map_err(|_| "Replace the saved Fish key in Settings.".into()),
+        Ok(_) | Err(_) if !allow_prompt => Err("Voice needs Keychain access. In /settings, click Try voice once to unlock it for this app session.".into()),
         Err(error) if error.code() == -25300 => Ok(None),
-        Err(_) => Err(
-            "Could not access the Fish API key in Keychain. Allow MommyCodex access and try again."
-                .into(),
-        ),
+        _ => Err("Could not access the Fish key. Try voice in /settings to allow access.".into()),
     }
 }
 #[cfg(windows)]
-fn read_key() -> Result<Option<String>, String> { crate::windows::read_key(KEY_SERVICE) }
+fn read_platform_key(_: bool) -> Result<Option<String>, String> { crate::windows::read_key(KEY_SERVICE) }
 #[cfg(not(any(target_os = "macos", windows)))]
-fn read_key() -> Result<Option<String>, String> {
-    Err("Voice playback currently requires the macOS app.".into())
-}
+fn read_platform_key(_: bool) -> Result<Option<String>, String> { Err("Voice is not supported on this platform.".into()) }
 
 #[tauri::command]
 pub async fn speech_key_status() -> Result<bool, String> {
-    Ok(read_key()?.is_some())
+    if KEY_CACHE.lock().map_err(|_| "Voice key state unavailable")?.is_some() { return Ok(true); }
+    // Checking Settings must not request password data or display an OS dialog.
+    #[cfg(target_os = "macos")]
+    return match key_search(false).search() {
+        Ok(results) => Ok(!results.is_empty()),
+        Err(error) if error.code() == -25300 => Ok(false),
+        Err(_) => Err("Keychain is unavailable. Unlock it before using voice.".into()),
+    };
+    #[cfg(not(target_os = "macos"))]
+    Ok(read_key(false)?.is_some())
 }
 
 #[tauri::command]
@@ -47,20 +76,24 @@ pub async fn speech_save_key(api_key: String) -> Result<(), String> {
         return Err("Enter a valid Fish Audio API key.".into());
     }
     #[cfg(target_os = "macos")]
-    return security_framework::passwords::set_generic_password(
+    security_framework::passwords::set_generic_password(
         KEY_SERVICE,
         KEY_ACCOUNT,
         key.as_bytes(),
     )
-    .map_err(|_| "Could not save the Fish API key in Keychain.".into());
+    .map_err(|_| "Could not save the Fish API key in Keychain.".to_string())?;
     #[cfg(windows)]
-    return crate::windows::save_key(KEY_SERVICE, key);
+    crate::windows::save_key(KEY_SERVICE, key)?;
     #[cfg(not(any(target_os = "macos", windows)))]
-    Err("Key storage is not supported on this platform.".into())
+    return Err("Key storage is not supported on this platform.".into());
+    *KEY_CACHE.lock().map_err(|_| "Voice key state unavailable")? = Some(zeroize::Zeroizing::new(key.to_owned()));
+    Ok(())
 }
 
 #[tauri::command]
 pub async fn speech_remove_key() -> Result<(), String> {
+    let mut cache = KEY_CACHE.lock().map_err(|_| "Voice key state unavailable")?;
+    *cache = None;
     #[cfg(target_os = "macos")]
     return match security_framework::passwords::delete_generic_password(KEY_SERVICE, KEY_ACCOUNT) {
         Ok(()) => Ok(()),
@@ -122,6 +155,7 @@ impl SpeechState {
         Ok(true)
     }
     pub fn shutdown(&self) {
+        if let Ok(mut cache) = KEY_CACHE.try_lock() { *cache = None; }
         if let Ok(mut playback) = self.playback.lock() {
             playback.stop();
             self.changed.send_replace(u64::MAX);
@@ -204,6 +238,7 @@ pub async fn speech_speak(
     speed: f64,
     model: String,
     character: Option<String>,
+    allow_key_prompt: Option<bool>,
     on_event: Channel<String>,
 ) -> Result<(), String> {
     if !state.accept(request_id)? {
@@ -223,7 +258,7 @@ pub async fn speech_speak(
         "nyx" => NYX_VOICE,
         _ => return Err("Choose a companion before reading aloud.".into()),
     };
-    let key = read_key()?
+    let key = read_key(allow_key_prompt.unwrap_or(false))?
         .ok_or("Add your Fish Audio API key in Settings → Companion voice to enable read aloud.")?;
     let client = reqwest::Client::builder()
         .redirect(reqwest::redirect::Policy::none())
@@ -421,6 +456,16 @@ mod tests {
         }
     }
     #[test]
+    fn successful_unlock_is_reused_and_failed_reads_are_not_cached() {
+        let mut cache = None;
+        assert!(cached_key(&mut cache, || Err("locked".into())).is_err());
+        assert!(cache.is_none());
+        assert_eq!(cached_key(&mut cache, || Ok(Some("fixture".into()))).unwrap().as_deref(), Some("fixture"));
+        assert_eq!(cached_key(&mut cache, || panic!("must not access Keychain again")).unwrap().as_deref(), Some("fixture"));
+        cache = None;
+        assert_eq!(cached_key(&mut cache, || Ok(Some("replacement".into()))).unwrap().as_deref(), Some("replacement"));
+    }
+    #[test]
     fn late_requests_cannot_restart_stopped_speech() {
         let state = SpeechState::default();
         assert!(state.accept(10).unwrap());
@@ -506,7 +551,7 @@ pub async fn speech_transcribe(
     } else {
         return Err("Unsupported microphone audio format.".into());
     };
-    let key = read_key()?.ok_or("Add your Fish API key in Settings to use voice input.")?;
+    let key = read_key(true)?.ok_or("Add your Fish API key in Settings to use voice input.")?;
     let client = reqwest::Client::builder()
         .redirect(reqwest::redirect::Policy::none())
         .timeout(Duration::from_secs(90))

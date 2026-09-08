@@ -28,6 +28,7 @@ tokio = { version = "1", features = ["process", "io-util", "sync", "macros", "rt
 which = "8"
 reqwest = { version = "0.13", default-features = false, features = ["json", "native-tls", "multipart"] }
 tempfile = "3"
+zeroize = "1"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 security-framework = "3"

@@ -56,6 +56,16 @@ describe("Speech playback", () => {
     expect(rpc.mock.calls[2][5]).toBe("mommy");
   });
 
+  it("allows Keychain dialogs only for explicit playback, never automatic speech", async () => {
+    const rpc = vi.spyOn(transport, "speakText").mockResolvedValue();
+    const controller = new SpeechController();
+    await controller.play("manual", "Hello.", "manual");
+    await controller.play("preview", "Hello.", "preview");
+    await controller.play("auto", "Hello.", "auto");
+    await controller.play("reaction", "Hello.", "reaction");
+    expect(rpc.mock.calls.map(call => call[6])).toEqual([true, true, false, false]);
+  });
+
   it("stops an in-flight generation and ignores its late events or errors", async () => {
     let fail!: (error: Error) => void;
     const rpc = vi.spyOn(transport, "speakText").mockImplementation(() => new Promise<void>((_, reject) => { fail = reject; }));

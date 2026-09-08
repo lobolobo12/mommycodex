@@ -60,7 +60,7 @@ export default function SpeechSettings() {
       </div>
       <p className="hint">Use /voice on or /voice off for automatic reading.</p>
       <button className={`btn ${reading ? "btn-danger" : "btn-primary"} voice-preview`} disabled={!reading && (!configured || busy)} onClick={() => reading ? void speech.stop() : void speech.play("voice-preview", voice.preview, "preview")}><Icon name={reading ? "stop" : "speaker"} size={14} />{reading ? speechStatus === "loading" ? "Cancel voice generation" : "Stop reading" : `Try ${voice.name}’s voice`}</button>
-      <p className="hint">Voice follows the selected companion. Reads original reply text, skipping code. Spoken text is sent to Fish Audio. Auto-read starts off. API credits are separate from Fish subscriptions; free-trial availability varies.</p>
+      <p className="hint">Voice follows the selected companion. macOS may ask once when you click Try voice after an update; access is reused until you quit. Background checks never request your password. Reads original reply text, skipping code. Spoken text is sent to Fish Audio. Auto-read starts off. API credits are separate from Fish subscriptions; free-trial availability varies.</p>
     </section>
   );
 }
