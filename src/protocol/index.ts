@@ -2,62 +2,47 @@
  * Hand-picked re-exports from the generated Codex app-server protocol
  * (`pnpm gen:protocol`), plus the message envelope the Rust bridge emits.
  */
-export type {
-  ThreadStartParams,
-  ThreadStartResponse,
-  ThreadResumeParams,
-  ThreadResumeResponse,
-  ThreadInjectItemsParams,
-  ThreadListParams,
-  ThreadListResponse,
-  ThreadSetNameParams,
-  ThreadArchiveParams,
-  Thread,
-  ThreadItem,
-  ThreadStatus,
-  Turn,
-  TurnStatus,
-  TurnError,
-  TurnStartParams,
-  TurnStartResponse,
-  TurnSteerParams,
-  ReviewStartParams,
-  ReviewStartResponse,
-  TurnPlanStep,
-  ThreadTokenUsage,
-  TurnInterruptParams,
-  UserInput,
-  Model,
-  ModelListResponse,
-  AskForApproval,
-  SandboxMode,
-  ApprovalsReviewer,
-  ThreadStartedNotification,
-  ThreadStatusChangedNotification,
-  TurnStartedNotification,
-  TurnCompletedNotification,
-  ItemStartedNotification,
-  ItemCompletedNotification,
-  AgentMessageDeltaNotification,
-  CommandExecutionOutputDeltaNotification,
-  ReasoningSummaryTextDeltaNotification,
-  ServerRequestResolvedNotification,
-  ErrorNotification,
-  CommandExecutionRequestApprovalParams,
-  CommandExecutionRequestApprovalResponse,
-  FileChangeRequestApprovalParams,
-  FileChangeRequestApprovalResponse,
-  PermissionsRequestApprovalParams,
-  PermissionsRequestApprovalResponse,
-  ToolRequestUserInputParams,
-  ToolRequestUserInputResponse,
-  McpServerElicitationRequestParams,
-  McpServerElicitationRequestResponse,
-  FileUpdateChange,
-} from "./generated/v2";
-export type { InitializeParams, InitializeResponse, Personality, ReasoningEffort, RequestId, ServerRequest } from "./generated";
+export type { ThreadStartParams } from "./generated/v2/ThreadStartParams";
+export type { ThreadStartResponse } from "./generated/v2/ThreadStartResponse";
+export type { ThreadResumeParams } from "./generated/v2/ThreadResumeParams";
+export type { ThreadResumeResponse } from "./generated/v2/ThreadResumeResponse";
+export type { ThreadInjectItemsParams } from "./generated/v2/ThreadInjectItemsParams";
 
-import type { RequestId } from "./generated";
+export type { ThreadListResponse } from "./generated/v2/ThreadListResponse";
+
+export type { Thread } from "./generated/v2/Thread";
+export type { ThreadItem } from "./generated/v2/ThreadItem";
+export type { ThreadStatus } from "./generated/v2/ThreadStatus";
+export type { Turn } from "./generated/v2/Turn";
+export type { TurnStatus } from "./generated/v2/TurnStatus";
+
+export type { TurnStartParams } from "./generated/v2/TurnStartParams";
+export type { TurnStartResponse } from "./generated/v2/TurnStartResponse";
+export type { TurnSteerParams } from "./generated/v2/TurnSteerParams";
+export type { ReviewStartParams } from "./generated/v2/ReviewStartParams";
+export type { ReviewStartResponse } from "./generated/v2/ReviewStartResponse";
+export type { TurnPlanStep } from "./generated/v2/TurnPlanStep";
+export type { ThreadTokenUsage } from "./generated/v2/ThreadTokenUsage";
+
+export type { UserInput } from "./generated/v2/UserInput";
+export type { Model } from "./generated/v2/Model";
+export type { ModelListResponse } from "./generated/v2/ModelListResponse";
+
+export type { CommandExecutionRequestApprovalParams } from "./generated/v2/CommandExecutionRequestApprovalParams";
+
+export type { FileChangeRequestApprovalParams } from "./generated/v2/FileChangeRequestApprovalParams";
+
+export type { PermissionsRequestApprovalParams } from "./generated/v2/PermissionsRequestApprovalParams";
+
+export type { ToolRequestUserInputParams } from "./generated/v2/ToolRequestUserInputParams";
+
+export type { McpServerElicitationRequestParams } from "./generated/v2/McpServerElicitationRequestParams";
+
+export type { InitializeParams } from "./generated/InitializeParams";
+
+export type { RequestId } from "./generated/RequestId";
+
+import type { RequestId } from "./generated/RequestId";
 
 /** Messages the Rust `CodexClient` pushes through the Tauri channel. */
 export type BridgeMessage =

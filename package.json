@@ -12,14 +12,13 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:rust": "cargo test --manifest-path src-tauri/Cargo.toml",
-    "gen:protocol": "codex app-server generate-ts --out src/protocol/generated",
+    "gen:protocol": "codex app-server generate-ts --out src/protocol/generated && node scripts/prune-protocol.mjs",
     "install:app": "sh scripts/install-app.sh"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-dialog": "~2.7.3",
     "@tauri-apps/plugin-opener": "^2",
-    "mdast-util-to-string": "^4.0.0",
     "playwright-core": "^1.63.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

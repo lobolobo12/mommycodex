@@ -12,7 +12,7 @@ Generated with the built-in image generation tool for this project.
 
 The four expression variants use a solid blush background and a circular UI crop. Small avatars remain still. The companion follows live state and respects reduced-motion preferences. Missing or failed image loads fall back to idle, then the SVG.
 
-Native PNG/ICNS/ICO files in `src-tauri/icons/` and `public/favicon.png` were generated from the transparent idle portrait with the Tauri icon CLI. Framed-icon and simulated-transparency previews were discarded; none are used by the app.
+Native PNG/ICNS files in `src-tauri/icons/` and `public/favicon.png` were generated from the transparent idle portrait with the Tauri icon CLI. Framed-icon and simulated-transparency previews were discarded; none are used by the app.
 
 ## Original portrait prompt
 
