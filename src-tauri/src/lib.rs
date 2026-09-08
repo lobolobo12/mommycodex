@@ -5,6 +5,7 @@ mod speech;
 mod workspace;
 mod browser;
 mod microphone;
+mod github;
 
 use std::path::PathBuf;
 
@@ -63,6 +64,7 @@ pub fn run() {
             speech::speech_transcribe,
             speech::speech_transcribe_stop,
             browser::browser_action,
+            github::github_action,
             microphone::microphone_start,
             microphone::microphone_finish,
             microphone::microphone_cancel,

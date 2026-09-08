@@ -1,3 +1,4 @@
+import ErrorRecovery from "./ErrorRecovery";
 import type { ItemState } from "../codex/store";
 import Icon from "./Icon";
 
@@ -69,6 +70,7 @@ export default function ToolCard({ item }: { item: ItemState }) {
               {output ? <pre>{output}</pre> : <div className="kv">(no output{it.status === "inProgress" ? " yet" : ""})</div>}
             </div>
           </details>
+          {item.done && (it.status==='failed'||(it.exitCode!==null&&it.exitCode!==0)) && <ErrorRecovery command={it.command} output={output} cwd={String(it.cwd)} threadId={item.threadId}/>}
         </div>
       );
     }

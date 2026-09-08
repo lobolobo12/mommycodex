@@ -1,3 +1,4 @@
+import { useHubStore } from "../hub/state";
 import { useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { session } from "../codex/session";
@@ -112,6 +113,7 @@ export default function Sidebar() {
   return (
     <aside className="sidebar card" aria-label="Projects and conversations">
       <div className="section-label">Workspace</div>
+      <button className="btn" onClick={()=>useHubStore.setState({open:true})}>Project launchpad</button>
       <button className="cwd-row" title={cwd ? `Change project: ${cwd}` : "Choose a project folder"} onClick={pickProjectFolder}>
         <span className="folder-icon"><Icon name="folder" size={20} /></span>
         <span className="project-info"><b>{projectName}</b><span className="path">{shortCwd}</span></span>

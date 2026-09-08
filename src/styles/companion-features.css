@@ -19,3 +19,26 @@
 .companion-choice b { display:block; font-size:12px; }
 .companion-choice small { display:block; font-size:10px; opacity:.7; margin-top:3px; white-space:nowrap; }
 .companion-selected { margin-left:auto; color:var(--accent, #b591f1); font-size:10px; }
+
+.launchpad-backdrop { position:fixed; inset:0; z-index:80; background:#0009; display:grid; place-items:center; padding:24px; }
+.launchpad { width:min(1100px,95vw); max-height:90vh; overflow:auto; padding:24px; }
+.launchpad header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+.project-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:16px; margin-top:20px; }
+.project-tile { border:1px solid var(--border,#8884); border-radius:14px; padding:14px; overflow:hidden; }
+.project-tile small { display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.project-thumbnail { width:100%; height:150px; object-fit:cover; border-radius:9px; }
+.project-placeholder { display:flex; flex-direction:column; justify-content:center; align-items:center; gap:12px; background:#8881; font-size:12px; text-align:center; }
+.project-placeholder .mascot-avatar { width:64px; height:64px; }
+.handoff-preview { font-size:12px; opacity:.7; }
+.handoff-panel label,.github-panel label { display:block; margin:12px 0; }
+.handoff-panel textarea,.github-panel textarea,.github-panel input:not([type=checkbox]),.visual-feedback textarea { width:100%; box-sizing:border-box; color:inherit; background:transparent; border:1px solid var(--border,#8885); border-radius:8px; padding:9px; }
+.handoff-panel pre { white-space:pre-wrap; max-height:300px; overflow:auto; font:inherit; }
+.issue-list article { margin:14px 0; padding:12px; border:1px solid var(--border,#8884); border-radius:10px; }
+.pr-file { display:flex; gap:8px; justify-content:space-between; overflow-wrap:anywhere; }
+.pr-screenshot { width:100%; border-radius:8px; }
+.error-recovery { margin:8px 12px; padding:10px; border:1px solid #d99a5844; border-radius:10px; font-size:12px; }
+.feedback-pin { position:absolute; z-index:3; transform:translate(-50%,-50%); background:#b077ff; color:white; border:2px solid white; border-radius:50%; width:24px; height:24px; display:grid; place-items:center; pointer-events:none; }
+.visual-feedback { padding:12px 0; }
+.workbench-tabs { flex-wrap:wrap; }
+
+.github-panel input[type=checkbox] { width:14px; height:14px; margin-right:8px; vertical-align:middle; }

@@ -15,3 +15,5 @@ export const browserAction=<T=BrowserSnapshot>(params:Record<string,unknown>)=>i
 export interface ReviewFile {path:string;kind:string;before:string|null;after:string|null;binary:boolean}
 export const checkpointFiles=(cwd:string,id:string)=>invoke<ReviewFile[]>('checkpoint_files',{cwd,id});
 export const checkpointReview=(cwd:string,id:string,action:'stage'|'accept'|'discard')=>invoke<Checkpoint>('checkpoint_review',{cwd,id,action});
+
+export const githubAction=<T=unknown>(cwd:string,action:string,params:Record<string,unknown>={})=>invoke<T>('github_action',{cwd,action,params});

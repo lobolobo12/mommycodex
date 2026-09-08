@@ -1,3 +1,6 @@
+import ProjectLaunchpad from "./components/ProjectLaunchpad";
+import { useHubStore } from "./hub/state";
+import { installHub } from "./hub/controller";
 import { installReactions } from "./speech/reactions";
 import { dictation, useDictationStore } from "./speech/dictation";
 import Workbench from "./components/Workbench";
@@ -15,6 +18,8 @@ import { speech, useSpeechStore } from "./speech/controller";
 import { useAppStore } from "./codex/store";
 
 export default function App() {
+  const launchpadOpen = useHubStore(s=>s.open);
+  useEffect(()=>installHub(),[]);
   const workbenchOpen = useHarnessStore(s => s.open);
   const character = useAppStore(s => s.settings.character);
   // The whole palette keys off this attribute (see theme.css): Mommy-chan pastel, Nyx midnight goth.
@@ -56,6 +61,7 @@ export default function App() {
         <ChatPane />
         {workbenchOpen ? <Workbench /> : <MascotPanel />}
       </div>
+      {launchpadOpen && <ProjectLaunchpad/>}
       <ApprovalModal />
       <Toasts />
     </div>

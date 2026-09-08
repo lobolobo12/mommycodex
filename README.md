@@ -12,6 +12,20 @@ Choose **Mommy-chan**, a sweet anime companion, or **Nyx**, a commanding goth co
 
 Code, diffs, commands, paths, and identifiers stay unchanged by the chat styling. Fish speech is optional and requires your own API key; keys are stored in macOS Keychain.
 
+## Download
+
+Get the **[latest Mac release](https://github.com/lobolobo12/mommycodex/releases/latest)**. The downloadable archive is currently for Apple Silicon; Intel users can build from source. Extract the ZIP and move the app to Applications. Release notes explain system requirements and signing status.
+
+## Project workflows
+
+- **Workbench → GitHub:** pick an open issue from the current repository. A clean default branch is required. The app creates an issue branch and asks Codex to implement it. Accept any pending file proposal, refresh the GitHub panel, inspect the files, and prepare the PR description. You choose the files, review recorded checks, optionally attach a preview screenshot, then explicitly commit, push, and create a draft PR. Edits made after your review force another review. GitHub CLI must already be logged in.
+- **Error recovery:** failed commands expose Explain, Fix, and Retry. Explain asks for diagnosis without edits or reruns; Fix asks for a repair and verification; Retry asks Codex to run the same command once.
+- **Project launchpad:** the sidebar opens recent projects with their companion and saved preview thumbnail. Launch preview opens the project, starts its configured server, and opens its configured local URL. Configure those commands in Project memory first.
+- **Visual feedback:** select Point and request a change in Preview, click the target, and describe the change. The request includes that screenshot and viewport coordinates.
+- **Session handoff:** task results, changed files, and unfinished plan steps are saved locally. Add decisions in Workbench → Handoff, or use Continue work from the launchpad. A resumed task is instructed to inspect current files before trusting historical notes.
+
+To package a local Mac release, run `scripts/package-release.sh`. It builds the current architecture, verifies the bundle signature, and creates a ZIP plus SHA-256 checksum under `output/releases/`.
+
 ## How it works
 
 ```
