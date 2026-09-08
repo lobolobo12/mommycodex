@@ -79,7 +79,7 @@ pnpm tauri dev
 pnpm tauri build --bundles nsis
 ```
 
-The installer appears in `src-tauri/target/release/bundle/nsis/`. The Windows workflow builds and tests on a Windows runner, installs the package, and checks the actual WebView2 app. Build outputs stay out of Git.
+The installer appears in `src-tauri/target/release/bundle/nsis/`. The Windows workflow is configured to build and test on a Windows runner, install the package, and check the actual WebView2 app. Build outputs stay out of Git.
 
 Windows preview/check commands run in `cmd.exe`, so use commands such as `npm run dev` and `npm test`, or explicitly invoke PowerShell when needed. Codex runs natively; the app resolves npm's `codex.cmd` to its packaged `codex.exe`. Both companions keep their own Fish voices. Save your own Fish key on each computer; keys are never bundled or synced. Microphone input uses the default Windows device and requires desktop microphone access in Windows privacy settings. Audio hardware and microphone-to-Fish transcription still need a manual device check.
 

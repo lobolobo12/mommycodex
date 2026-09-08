@@ -18,7 +18,9 @@ pub fn read_key(target: &str) -> Result<Option<String>, String> {
             return if GetLastError() == ERROR_NOT_FOUND { Ok(None) }
             else { Err("Could not read Fish key from Windows Credential Manager.".into()) };
         }
-        let bytes = std::slice::from_raw_parts((*credential).CredentialBlob, (*credential).CredentialBlobSize as usize).to_vec();
+        let bytes = if (*credential).CredentialBlobSize == 0 { Vec::new() } else {
+            std::slice::from_raw_parts((*credential).CredentialBlob, (*credential).CredentialBlobSize as usize).to_vec()
+        };
         CredFree(credential.cast());
         String::from_utf8(bytes).map(Some).map_err(|_| "Replace the saved Fish key in Settings.".into())
     }

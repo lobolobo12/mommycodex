@@ -5,11 +5,13 @@ use std::{path::{Path, Component}, io::Write, hash::{Hash, Hasher}};
 use tokio::process::Command;
 type Result<T> = std::result::Result<T,String>;
 async fn run(cwd:&Path, program:&str, args:&[&str])->Result<String>{
-    #[cfg(test)]
-    let test_program=if program=="gh" {std::env::var("MOMMYCODEX_TEST_GH").unwrap_or_else(|_|program.into())}else{program.into()};
-    #[cfg(test)]
-    let program=test_program.as_str();
     let mut command=Command::new(program);
+    #[cfg(test)]
+    if program=="gh" {
+        if let Ok(script)=std::env::var("MOMMYCODEX_TEST_GH") {
+            command=Command::new("node");command.arg(script);
+        }
+    }
     #[cfg(windows)]
     command.creation_flags(0x08000000);
     let out=command.args(args).current_dir(cwd).env("GIT_TERMINAL_PROMPT","0").env("GH_PROMPT_DISABLED","1").output().await.map_err(|e|format!("Could not run {program}: {e}. Install GitHub CLI and run gh auth login."))?;
@@ -112,10 +114,9 @@ pub async fn github_action(cwd:String,action:String,params:Value)->Result<Value>
 }
 #[cfg(test)]mod tests {use super::*;#[test]fn rejects_git_paths_traversal_and_credentials(){for p in ["../a","/tmp/a",".git/config","src/../../a",".env","a/.env.production","secret.pem"]{assert!(safe_file(p).is_err(),"{p}");}assert!(safe_file("src/components/App.tsx").is_ok());}}
 
-#[cfg(all(test, unix))]
+#[cfg(test)]
 mod workflow_tests {
     use super::*;
-    use std::os::unix::fs::PermissionsExt;
     #[tokio::test]
     async fn issue_branch_review_commit_push_and_draft_with_screenshot() {
         let project=tempfile::tempdir().unwrap();let remote=tempfile::tempdir().unwrap();let mock=tempfile::tempdir().unwrap();
@@ -125,18 +126,21 @@ mod workflow_tests {
         run(&cwd,"git",&["config","user.email","fixture@example.invalid"]).await.unwrap();
         std::fs::write(cwd.join("a.txt"),"baseline").unwrap();run(&cwd,"git",&["add","a.txt"]).await.unwrap();run(&cwd,"git",&["commit","-m","baseline"]).await.unwrap();
         run(remote.path(),"git",&["init","--bare"]).await.unwrap();run(&cwd,"git",&["remote","add","origin",remote.path().to_str().unwrap()]).await.unwrap();
-        let gh=mock.path().join("gh");
-        std::fs::write(&gh,r##"#!/bin/sh
-printf '%s\n' "$*" >> "$(dirname "$0")/calls"
-case "$1 $2" in
-'repo view') printf '%s\n' '{"nameWithOwner":"fixture/project","url":"https://github.com/fixture/project","defaultBranchRef":{"name":"main"}}';;
-'issue list') printf '%s\n' '[{"number":7,"title":"Improve controls","body":"Make controls work","url":"https://github.com/fixture/project/issues/7"}]';;
-'issue view') printf '%s\n' '{"number":7,"title":"Improve controls","body":"Make controls work","url":"https://github.com/fixture/project/issues/7"}';;
-'pr list') printf '%s\n' '[]';;
-'pr create') while [ "$#" -gt 0 ]; do if [ "$1" = '--body-file' ]; then shift; cp "$1" "$(dirname "$0")/body.md"; fi; shift; done; printf '%s\n' 'https://github.com/fixture/project/pull/8';;
-*) exit 1;;
-esac
-"##).unwrap();std::fs::set_permissions(&gh,std::fs::Permissions::from_mode(0o755)).unwrap();
+        let gh=mock.path().join("gh.cjs");
+        std::fs::write(&gh,r##"
+const fs=require('node:fs'), path=require('node:path');
+const args=process.argv.slice(2);
+fs.appendFileSync(path.join(__dirname,'calls'),args.join(' ')+'\n');
+const issue={number:7,title:'Improve controls',body:'Make controls work',url:'https://github.com/fixture/project/issues/7'};
+switch(args.slice(0,2).join(' ')) {
+case 'repo view': console.log(JSON.stringify({nameWithOwner:'fixture/project',url:'https://github.com/fixture/project',defaultBranchRef:{name:'main'}}));break;
+case 'issue list': console.log(JSON.stringify([issue]));break;
+case 'issue view': console.log(JSON.stringify(issue));break;
+case 'pr list': console.log('[]');break;
+case 'pr create': fs.copyFileSync(args[args.indexOf('--body-file')+1],path.join(__dirname,'body.md'));console.log('https://github.com/fixture/project/pull/8');break;
+default: process.exit(1);
+}
+"##).unwrap();
         std::env::set_var("MOMMYCODEX_TEST_GH",&gh);
         let issues=handle(&cwd,"issues",json!({})).await.unwrap();assert_eq!(issues[0]["number"],7);
         std::fs::write(cwd.join("dirty"),"existing user changes").unwrap();assert!(handle(&cwd,"start",json!({"number":7})).await.unwrap_err().contains("Commit or stash"));std::fs::remove_file(cwd.join("dirty")).unwrap();
