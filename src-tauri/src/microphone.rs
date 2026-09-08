@@ -3,6 +3,7 @@ use std::{
     sync::atomic::{AtomicU32, AtomicU64, Ordering},
     time::Duration,
 };
+#[cfg(not(windows))]
 use tauri::Manager;
 use tokio::{
     io::{AsyncBufReadExt, AsyncWriteExt, BufReader},
@@ -13,7 +14,7 @@ struct Recording {
     child: Child,
     input: ChildStdin,
     output: BufReader<ChildStdout>,
-    file: tempfile::NamedTempFile,
+    file: tempfile::TempPath,
     id: u64,
 }
 #[derive(Default)]
@@ -26,9 +27,7 @@ impl MicrophoneState {
     pub fn shutdown(&self) {
         let pid = self.pid.swap(0, Ordering::SeqCst);
         if pid != 0 {
-            let _ = std::process::Command::new("/bin/kill")
-                .args(["-TERM", &pid.to_string()])
-                .status();
+            crate::process::terminate(pid);
         }
     }
 }
@@ -61,18 +60,29 @@ pub async fn microphone_start(
         .suffix(".wav")
         .tempfile()
         .map_err(|e| e.to_string())?;
+    #[cfg(not(windows))]
     let program = app
         .path()
         .resource_dir()
         .map_err(|e| e.to_string())?
         .join("native/microphone");
+    #[cfg(not(windows))]
     let program = if program.exists() {
         program
     } else {
         std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("resources/native/microphone")
     };
-    let mut child = Command::new(program)
-        .arg(file.path())
+    let file = file.into_temp_path();
+    #[cfg(not(windows))]
+    let mut command = Command::new(program);
+    #[cfg(windows)]
+    let mut command = {
+        let _ = app;
+        let mut command = Command::new(std::env::current_exe().map_err(|e| e.to_string())?);
+        command.arg("--mommycodex-record").creation_flags(0x08000000);
+        command
+    };
+    let mut child = command.arg(&file)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::null())
@@ -109,7 +119,7 @@ pub async fn microphone_start(
     tokio::time::timeout(Duration::from_secs(45), output.read_line(&mut line))
         .await
         .map_err(|_| {
-            "Microphone permission is still pending. Allow access in macOS, then try again."
+            "Microphone permission is still pending. Allow access in system privacy settings, then try again."
         })?
         .map_err(|e| e.to_string())?;
     if state.latest.load(Ordering::SeqCst) != request_id {
@@ -159,7 +169,7 @@ pub async fn microphone_finish(
     if state.latest.load(Ordering::SeqCst) != request_id {
         return Err("Recording cancelled".into());
     }
-    let audio = std::fs::read(recording.file.path()).map_err(|e| e.to_string())?;
+    let audio = std::fs::read(&recording.file).map_err(|e| e.to_string())?;
     if audio.len() > 12 * 1024 * 1024 {
         return Err("Recording exceeded 12 MB".into());
     }

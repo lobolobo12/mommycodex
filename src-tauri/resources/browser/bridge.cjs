@@ -26,7 +26,13 @@ if (process.argv[2] === 'client') {
       const result=await enqueue(input);res.setHeader('Content-Type','application/json');res.end(JSON.stringify(result));}
     catch(e){res.writeHead(400);res.end(JSON.stringify({error:e.message}));}
   });
-  function stopChild(child){ if(!child)return; try{process.kill(-child.pid,'SIGTERM');}catch{} setTimeout(()=>{try{process.kill(-child.pid,'SIGKILL');}catch{}},1000).unref(); }
+  const windows = process.platform === 'win32';
+  function shell(command, options) {
+    return windows
+      ? spawn(process.env.ComSpec || 'cmd.exe', ['/d', '/s', '/c', `"${command}"`], {...options, windowsHide:true, windowsVerbatimArguments:true})
+      : spawn('/bin/zsh', ['-lc', command], {...options, detached:true});
+  }
+  function stopChild(child){ if(windows){if(child?.pid)spawn('taskkill.exe',['/pid',String(child.pid),'/t','/f'],{windowsHide:true,stdio:'ignore'}).on('error',()=>{});return;} if(!child)return; try{process.kill(-child.pid,'SIGTERM');}catch{} setTimeout(()=>{try{process.kill(-child.pid,'SIGKILL');}catch{}},1000).unref(); }
   async function terminate(child){
     if(!child||child.exitCode!==null||child.signalCode!==null)return;
     const exited=new Promise(r=>child.once('exit',r));stopChild(child);
@@ -82,7 +88,7 @@ if (process.argv[2] === 'client') {
       case 'server_start': {
         if(!a.command?.trim()||a.command.length>16000)throw Error('Enter a run command in project memory');
         const next=cwd(a.cwd);if(checkProcess&&project!==next)throw Error('Stop project checks before changing the server project');serverCommand=a.command;await terminate(serverProcess);serverProcess=null;logs=[];consoleLog=[];project=next;serverExit=null;
-        serverProcess=spawn('/bin/zsh',['-lc',a.command],{cwd:next,detached:true,stdio:['ignore','pipe','pipe'],env:{...process.env,FORCE_COLOR:'0',BROWSER:'none'}});
+        serverProcess=shell(a.command,{cwd:next,stdio:['ignore','pipe','pipe'],env:{...process.env,FORCE_COLOR:'0',BROWSER:'none'}});
         const child=serverProcess;
         for(const stream of [child.stdout,child.stderr])stream.on('data',b=>bounded(logs,b.toString().slice(-8000)));
         child.on('error',e=>{bounded(logs,e.message);if(serverProcess===child){serverProcess=null;serverExit=-1;}});
@@ -102,7 +108,7 @@ if (process.argv[2] === 'client') {
         if(checkProcess)throw Error('Checks already running');if(!a.command?.trim())throw Error('Enter a check command in project memory');
         const next=cwd(a.cwd);if(project&&project!==next)throw Error('Preview is attached to another project');project=next;
         const run={id:crypto.randomUUID(),command:a.command,status:'running',output:'',exitCode:null,startedAt:Date.now()};check=run;
-        const child=spawn('/bin/zsh',['-lc',a.command],{cwd:next,detached:true,stdio:['ignore','pipe','pipe'],env:{...process.env,CI:'true',FORCE_COLOR:'0'}});checkProcess=child;
+        const child=shell(a.command,{cwd:next,stdio:['ignore','pipe','pipe'],env:{...process.env,CI:'true',FORCE_COLOR:'0'}});checkProcess=child;
         const timer=setTimeout(()=>{if(checkProcess===child){run.status='timedOut';stopChild(child);}},120000);
         for(const stream of [child.stdout,child.stderr])stream.on('data',b=>{run.output=(run.output+b.toString()).slice(-32000);});
         child.on('error',e=>{run.output+=e.message;run.status='failed';checkProcess=null;clearTimeout(timer);});

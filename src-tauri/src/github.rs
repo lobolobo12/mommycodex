@@ -9,13 +9,16 @@ async fn run(cwd:&Path, program:&str, args:&[&str])->Result<String>{
     let test_program=if program=="gh" {std::env::var("MOMMYCODEX_TEST_GH").unwrap_or_else(|_|program.into())}else{program.into()};
     #[cfg(test)]
     let program=test_program.as_str();
-    let out=Command::new(program).args(args).current_dir(cwd).env("GIT_TERMINAL_PROMPT","0").env("GH_PROMPT_DISABLED","1").output().await.map_err(|e|format!("Could not run {program}: {e}. Install GitHub CLI and run gh auth login."))?;
+    let mut command=Command::new(program);
+    #[cfg(windows)]
+    command.creation_flags(0x08000000);
+    let out=command.args(args).current_dir(cwd).env("GIT_TERMINAL_PROMPT","0").env("GH_PROMPT_DISABLED","1").output().await.map_err(|e|format!("Could not run {program}: {e}. Install GitHub CLI and run gh auth login."))?;
     if !out.status.success(){return Err(String::from_utf8_lossy(&out.stderr).chars().take(4000).collect());}
     String::from_utf8(out.stdout).map_err(|_|"Command returned non-UTF-8 paths".into())
 }
 fn safe_file(name:&str)->Result<()> {
     if name.is_empty()||Path::new(name).components().any(|p|!matches!(p,Component::Normal(_))){return Err("Invalid file path".into());}
-    if name.split('/').any(|p|p==".git"||p==".env"||p.starts_with(".env.")||p.ends_with(".pem")||p.ends_with(".key")){return Err(format!("Exclude credential or Git metadata file: {name}"));}Ok(())
+    if name.split(['/', '\\']).any(|p|p==".git"||p==".env"||p.starts_with(".env.")||p.ends_with(".pem")||p.ends_with(".key")){return Err(format!("Exclude credential or Git metadata file: {name}"));}Ok(())
 }
 async fn repository(cwd:&Path)->Result<Value>{
     let root=run(cwd,"git",&["rev-parse","--show-toplevel"]).await?;
@@ -109,7 +112,7 @@ pub async fn github_action(cwd:String,action:String,params:Value)->Result<Value>
 }
 #[cfg(test)]mod tests {use super::*;#[test]fn rejects_git_paths_traversal_and_credentials(){for p in ["../a","/tmp/a",".git/config","src/../../a",".env","a/.env.production","secret.pem"]{assert!(safe_file(p).is_err(),"{p}");}assert!(safe_file("src/components/App.tsx").is_ok());}}
 
-#[cfg(test)]
+#[cfg(all(test, unix))]
 mod workflow_tests {
     use super::*;
     use std::os::unix::fs::PermissionsExt;

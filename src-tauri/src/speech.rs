@@ -4,13 +4,14 @@ use std::process::{Child, Command, Stdio};
 use std::sync::Mutex;
 use std::time::Duration;
 use tauri::{ipc::Channel, State};
-use tempfile::NamedTempFile;
+use tempfile::TempPath;
 use tokio::sync::watch;
 
 const MOMMY_VOICE: &str = "60bd8f0f5bbc462a8fa1686dd81af336";
 const NYX_VOICE: &str = "857b089972de4840baf7830a089d98da";
 const FISH_URL: &str = "https://api.fish.audio/v1/tts";
 const KEY_SERVICE: &str = "com.lovrobor.mommycodex.fish-audio";
+#[cfg(target_os = "macos")]
 const KEY_ACCOUNT: &str = "api-key";
 const MAX_AUDIO: usize = 20 * 1024 * 1024;
 
@@ -27,7 +28,9 @@ fn read_key() -> Result<Option<String>, String> {
         ),
     }
 }
-#[cfg(not(target_os = "macos"))]
+#[cfg(windows)]
+fn read_key() -> Result<Option<String>, String> { crate::windows::read_key(KEY_SERVICE) }
+#[cfg(not(any(target_os = "macos", windows)))]
 fn read_key() -> Result<Option<String>, String> {
     Err("Voice playback currently requires the macOS app.".into())
 }
@@ -50,8 +53,10 @@ pub async fn speech_save_key(api_key: String) -> Result<(), String> {
         key.as_bytes(),
     )
     .map_err(|_| "Could not save the Fish API key in Keychain.".into());
-    #[cfg(not(target_os = "macos"))]
-    Err("Key storage currently requires the macOS app.".into())
+    #[cfg(windows)]
+    return crate::windows::save_key(KEY_SERVICE, key);
+    #[cfg(not(any(target_os = "macos", windows)))]
+    Err("Key storage is not supported on this platform.".into())
 }
 
 #[tauri::command]
@@ -62,15 +67,17 @@ pub async fn speech_remove_key() -> Result<(), String> {
         Err(error) if error.code() == -25300 => Ok(()),
         Err(_) => Err("Could not remove the Fish API key from Keychain.".into()),
     };
-    #[cfg(not(target_os = "macos"))]
-    Err("Key storage currently requires the macOS app.".into())
+    #[cfg(windows)]
+    return crate::windows::remove_key(KEY_SERVICE);
+    #[cfg(not(any(target_os = "macos", windows)))]
+    Err("Key storage is not supported on this platform.".into())
 }
 
 #[derive(Default)]
 struct Playback {
     latest: u64,
     child: Option<Child>,
-    audio: Option<NamedTempFile>,
+    audio: Option<TempPath>,
 }
 impl Playback {
     fn stop(&mut self) {
@@ -248,15 +255,24 @@ pub async fn speech_speak(
             .map_err(|_| "Could not prepare speech audio.")?;
         file.write_all(&audio)
             .map_err(|_| "Could not save temporary speech audio.")?;
-        let child = Command::new("/usr/bin/afplay")
-            .arg(file.path())
+        let path = file.into_temp_path();
+        #[cfg(not(windows))]
+        let mut command = Command::new("/usr/bin/afplay");
+        #[cfg(windows)]
+        let mut command = {
+            use std::os::windows::process::CommandExt;
+            let mut command = Command::new(std::env::current_exe().map_err(|e| e.to_string())?);
+            command.arg("--mommycodex-play").creation_flags(0x08000000);
+            command
+        };
+        let child = command.arg(&path)
             .stdin(Stdio::null())
             .stdout(Stdio::null())
             .stderr(Stdio::null())
             .spawn()
             .map_err(|_| "Could not start audio playback.")?;
         playback.child = Some(child);
-        playback.audio = Some(file);
+        playback.audio = Some(path);
     }
     if on_event.send("playing".into()).is_err() {
         let mut playback = state
@@ -433,10 +449,14 @@ mod tests {
     #[test]
     fn stopping_reaps_the_player_and_removes_temporary_audio() {
         let mut playback = Playback::default();
-        let file = NamedTempFile::new().unwrap();
+        let file = tempfile::NamedTempFile::new().unwrap();
         let path = file.path().to_owned();
-        playback.audio = Some(file);
-        playback.child = Some(Command::new("/bin/sleep").arg("20").spawn().unwrap());
+        playback.audio = Some(file.into_temp_path());
+        #[cfg(unix)]
+        let child = Command::new("/bin/sleep").arg("20").spawn().unwrap();
+        #[cfg(windows)]
+        let child = Command::new("ping.exe").args(["-n", "20", "127.0.0.1"]).stdout(Stdio::null()).spawn().unwrap();
+        playback.child = Some(child);
         playback.stop();
         assert!(playback.child.is_none());
         assert!(!path.exists());

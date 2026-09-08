@@ -1,6 +1,6 @@
 # MommyCodex ♡
 
-A macOS desktop companion for the [OpenAI Codex CLI](https://developers.openai.com/codex), built with Tauri, React, and TypeScript.
+A macOS and Windows desktop companion for the [OpenAI Codex CLI](https://developers.openai.com/codex), built with Tauri, React, and TypeScript.
 
 Choose **Mommy-chan**, a sweet anime companion, or **Nyx**, a commanding goth companion. Each has her own chats, preferences, expressions, and optional Fish Audio voice. This is an independent community project.
 
@@ -10,11 +10,11 @@ Choose **Mommy-chan**, a sweet anime companion, or **Nyx**, a commanding goth co
 - Switch between pastel and midnight themes using character portrait buttons.
 - Optionally theme new games and apps with the selected companion’s building style.
 
-Code, diffs, commands, paths, and identifiers stay unchanged by the chat styling. Fish speech is optional and requires your own API key; keys are stored in macOS Keychain.
+Code, diffs, commands, paths, and identifiers stay unchanged by the chat styling. Fish speech is optional and requires your own API key; keys are stored in macOS Keychain or Windows Credential Manager.
 
 ## Download
 
-Get the **[latest Mac release](https://github.com/lobolobo12/mommycodex/releases/latest)**. The downloadable archive is currently for Apple Silicon; Intel users can build from source. Extract the ZIP and move the app to Applications. Release notes explain system requirements and signing status.
+Get the **[desktop releases](https://github.com/lobolobo12/mommycodex/releases)**. On Windows 10/11 x64, run the `-setup.exe` installer; it installs for your account and downloads WebView2 if needed. The Windows installer is unsigned. On Apple Silicon Macs, extract the ZIP and move the app to Applications; Intel Mac users can build from source. Release notes list the exact artifacts and verification status.
 
 ## Project workflows
 
@@ -50,9 +50,10 @@ React + TypeScript webview ── invoke / Channel ──▶ Rust CodexClient �
 
 ## Requirements
 
-- macOS (Apple Silicon or Intel), Codex CLI installed and logged in (`npm i -g @openai/codex`).
-- Node 22.12+ (or a compatible newer version), pnpm, Rust, and Xcode Command Line Tools.
-- Google Chrome for the shared browser preview.
+- macOS 12+ (Apple Silicon or Intel), or Windows 10/11 x64.
+- Node 22.12+ and Codex CLI installed and logged in (`npm i -g @openai/codex`, then `codex login`). Restart the app after installing command-line tools so it sees the updated PATH.
+- Google Chrome for the shared browser preview; Git and authenticated GitHub CLI for GitHub workflows.
+- Building from source also requires pnpm, Rust, and Xcode Command Line Tools on Mac, or Visual Studio C++ Build Tools with the Windows SDK on Windows.
 
 ## Develop
 
@@ -67,7 +68,24 @@ cargo test --manifest-path src-tauri/Cargo.toml -- --ignored   # real app-server
 pnpm gen:protocol        # regenerate protocol types and retain only the app’s dependency graph
 ```
 
-## Install the app and the `mommycodex` command
+## Windows development
+
+Run these in PowerShell after installing the prerequisites:
+
+```powershell
+pnpm install
+$env:MOMMYCODEX_CWD = "C:\Projects\my-app"
+pnpm tauri dev
+pnpm tauri build --bundles nsis
+```
+
+The installer appears in `src-tauri/target/release/bundle/nsis/`. The Windows workflow builds and tests on a Windows runner, installs the package, and checks the actual WebView2 app. Build outputs stay out of Git.
+
+Windows preview/check commands run in `cmd.exe`, so use commands such as `npm run dev` and `npm test`, or explicitly invoke PowerShell when needed. Codex runs natively; the app resolves npm's `codex.cmd` to its packaged `codex.exe`. Both companions keep their own Fish voices. Save your own Fish key on each computer; keys are never bundled or synced. Microphone input uses the default Windows device and requires desktop microphone access in Windows privacy settings. Audio hardware and microphone-to-Fish transcription still need a manual device check.
+
+Checkpoint accept/undo works for ordinary files. On Windows, a checkpoint containing changed symbolic links is refused before modifying any files; use Git to review those changes.
+
+## Install the Mac app and the `mommycodex` command
 
 ```sh
 pnpm run install:app     # builds MommyCodex.app into ~/Applications and ~/.local/bin/mommycodex
@@ -96,7 +114,7 @@ You can draft while disconnected; sending becomes available once Codex and a pro
   [Mommy voice by Velenuvia](https://fish.audio/m/60bd8f0f5bbc462a8fa1686dd81af336/).
   In Settings → Mommy's voice, save a [Fish API key](https://fish.audio/app/api-keys/),
   preview the voice, choose a speed, and optionally enable auto-read. The key lives in
-  macOS Keychain and never in chat settings or Codex prompts. The free developer tier
+  macOS Keychain or Windows Credential Manager and never in chat settings or Codex prompts. The free developer tier
   is selected initially; Standard uses Fish API credits. The app does not silently
   switch tiers. Spoken reply text is sent to Fish Audio, with code, URLs, and decorative
   faces removed. Auto-read speaks only new successful final replies in the selected

@@ -21,6 +21,10 @@ fn native_relative_path() -> Option<&'static str> {
         Some("node_modules/@openai/codex-linux-x64/vendor/x86_64-unknown-linux-musl/bin/codex")
     } else if cfg!(all(target_os = "linux", target_arch = "aarch64")) {
         Some("node_modules/@openai/codex-linux-arm64/vendor/aarch64-unknown-linux-musl/bin/codex")
+    } else if cfg!(all(windows, target_arch = "x86_64")) {
+        Some("node_modules/@openai/codex-win32-x64/vendor/x86_64-pc-windows-msvc/bin/codex.exe")
+    } else if cfg!(all(windows, target_arch = "aarch64")) {
+        Some("node_modules/@openai/codex-win32-arm64/vendor/aarch64-pc-windows-msvc/bin/codex.exe")
     } else {
         None
     }
@@ -63,10 +67,14 @@ fn is_executable_file(p: &Path) -> bool {
 
 /// Prefer the native binary when `candidate` is (or links to) the npm launcher.
 fn prefer_native(candidate: PathBuf) -> PathBuf {
-    let resolved = std::fs::canonicalize(&candidate).unwrap_or_else(|_| candidate.clone());
+    // npm on Windows installs a .cmd/.ps1 shim beside node_modules, not a symlink.
+    let launcher = if cfg!(windows) && candidate.extension().is_some_and(|e| e == "cmd" || e == "ps1") {
+        candidate.parent().unwrap_or(Path::new(".")).join("node_modules/@openai/codex/bin/codex.js")
+    } else { candidate.clone() };
+    let resolved = std::fs::canonicalize(&launcher).unwrap_or(launcher);
     let looks_like_launcher = resolved
         .to_string_lossy()
-        .contains("@openai/codex/")
+        .replace('\\', "/").contains("@openai/codex/")
         || resolved.extension().map(|e| e == "js").unwrap_or(false);
     if looks_like_launcher {
         if let Some(native) = native_for_launcher(&resolved) {
@@ -79,7 +87,7 @@ fn prefer_native(candidate: PathBuf) -> PathBuf {
 }
 
 fn home() -> Option<PathBuf> {
-    std::env::var_os("HOME").map(PathBuf::from)
+    std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")).map(PathBuf::from)
 }
 
 /// Resolution order:
@@ -112,6 +120,9 @@ pub fn resolve_codex_binary(override_path: Option<&str>) -> Result<PathBuf, Stri
     }
 
     let mut fallbacks: Vec<PathBuf> = vec![];
+    if let Some(appdata) = std::env::var_os("APPDATA") {
+        fallbacks.push(PathBuf::from(appdata).join("npm/codex.cmd"));
+    }
     if let Some(rel) = native_relative_path() {
         fallbacks.push(PathBuf::from("/opt/homebrew/lib/node_modules/@openai/codex").join(rel));
         fallbacks.push(PathBuf::from("/usr/local/lib/node_modules/@openai/codex").join(rel));
@@ -146,6 +157,28 @@ mod tests {
         );
     }
 
+    #[cfg(windows)]
+    #[test]
+    fn npm_cmd_shim_resolves_to_native_executable() {
+        let root = tempfile::tempdir().unwrap();
+        let package = root.path().join("node_modules/@openai/codex");
+        let native = package.join(native_relative_path().unwrap());
+        std::fs::create_dir_all(native.parent().unwrap()).unwrap();
+        std::fs::write(&native, b"fixture").unwrap();
+        let shim = root.path().join("codex.cmd");
+        std::fs::write(&shim, b"fixture").unwrap();
+        assert_eq!(prefer_native(shim), native);
+    }
+    #[cfg(windows)]
+    #[test]
+    fn installed_windows_codex_can_launch_directly() {
+        if std::env::var("MOMMYCODEX_TEST_INSTALLED_CODEX").as_deref() != Ok("1") { return; }
+        let binary = resolve_codex_binary(None).unwrap();
+        assert_eq!(binary.extension().unwrap(), "exe");
+        let output = std::process::Command::new(binary).arg("--version").output().unwrap();
+        assert!(output.status.success());
+        assert!(String::from_utf8_lossy(&output.stdout).contains("codex"));
+    }
     #[test]
     fn non_launcher_paths_do_not_map() {
         assert!(native_for_launcher(Path::new("/usr/local/bin/codex")).is_none());

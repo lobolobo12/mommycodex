@@ -245,6 +245,8 @@ impl CodexClient {
         let generation = self.inner.generation.fetch_add(1, Ordering::SeqCst) + 1;
 
         let mut cmd = Command::new(&binary);
+        #[cfg(windows)]
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
         cmd.arg("app-server").arg("--listen").arg("stdio://");
         for o in &opts.config_overrides {
             cmd.arg("-c").arg(o);

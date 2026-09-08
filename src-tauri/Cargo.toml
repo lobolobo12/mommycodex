@@ -1,6 +1,6 @@
 [package]
 name = "mommycodex"
-version = "0.2.0"
+version = "0.2.1"
 description = "MommyCodex: a kawaii desktop harness around the OpenAI Codex CLI"
 authors = ["lovrobor"]
 edition = "2021"
@@ -28,10 +28,13 @@ tokio = { version = "1", features = ["process", "io-util", "sync", "macros", "rt
 which = "8"
 reqwest = { version = "0.13", default-features = false, features = ["json", "native-tls", "multipart"] }
 tempfile = "3"
-fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs", rev = "c4c45d503ea115a839aae718d02f79e7c7f0f673" }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 security-framework = "3"
+fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs", rev = "c4c45d503ea115a839aae718d02f79e7c7f0f673" }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Security_Credentials", "Win32_Media_Multimedia"] }
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration
 [profile.release]

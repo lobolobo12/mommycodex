@@ -28,9 +28,7 @@ impl BrowserState {
     pub fn shutdown(&self) {
         let pid = self.pid.swap(0, Ordering::SeqCst);
         if pid != 0 {
-            let _ = std::process::Command::new("/bin/kill")
-                .args(["-TERM", &pid.to_string()])
-                .status();
+            crate::process::terminate(pid);
         }
     }
 }
@@ -99,8 +97,10 @@ pub async fn browser_action(
             .prefix("mommycodex-browser-")
             .tempdir()
             .map_err(|e| e.to_string())?;
-        let mut child = Command::new(node_binary()?)
-            .arg(script)
+        let mut command = Command::new(node_binary()?);
+        #[cfg(windows)]
+        command.creation_flags(0x08000000);
+        let mut child = command.arg(script)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::null())

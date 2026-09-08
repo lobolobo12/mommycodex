@@ -6,6 +6,9 @@ mod workspace;
 mod browser;
 mod microphone;
 mod github;
+mod process;
+#[cfg(windows)]
+pub mod windows;
 
 use std::path::PathBuf;
 

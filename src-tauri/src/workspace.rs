@@ -140,7 +140,10 @@ fn walk(dir: &Path, base: &Path, paths: &mut BTreeSet<PathBuf>) -> Result<()> {
     Ok(())
 }
 fn paths(cwd: &Path) -> Result<BTreeSet<PathBuf>> {
-    let output = Command::new("git")
+    let mut command = Command::new("git");
+    #[cfg(windows)]
+    { use std::os::windows::process::CommandExt; command.creation_flags(0x08000000); }
+    let output = command
         .args([
             "ls-files",
             "-z",
@@ -356,6 +359,10 @@ fn restore(base: &Path, cwd: &Path, key: &str, forward: bool) -> Result<Checkpoi
     } else {
         (completed, &record.before, dir.join("after"), dir.join("before"))
     };
+    #[cfg(windows)]
+    if record.info.changed.iter().any(|name| after.get(name).is_some_and(|e| e.link) || target.get(name).is_some_and(|e| e.link)) {
+        return Err("Windows checkpoint restore does not support changed symbolic links. No files were modified; review those changes with Git.".into());
+    }
     // Check every affected path before writing anything. Later edits are never discarded.
     for name in &record.info.changed {
         let p = checked_path(cwd, name)?;
@@ -644,6 +651,7 @@ mod tests {
         assert_eq!(fs::read(p.path().join("a")).unwrap(), [0, 255, 128]);
     }
     #[test]
+    #[cfg(unix)]
     fn symlink_parent_cannot_escape_restore() {
         let b = tempfile::tempdir().unwrap();
         let p = tempfile::tempdir().unwrap();

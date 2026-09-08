@@ -2139,7 +2139,7 @@ dependencies = [
 
 [[package]]
 name = "mommycodex"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "base64 0.22.1",
  "fix-path-env",
@@ -2154,6 +2154,7 @@ dependencies = [
  "tempfile",
  "tokio",
  "which",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

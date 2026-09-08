@@ -25,11 +25,13 @@ test('shared browser captures real interactions, assertions, console errors and 
   await request({action:'fill',selector:'#name',text:'Mika'});
   await request({action:'click',selector:'#fail'});view=await request({action:'snapshot'});assert.ok(view.console.some(e=>e.text==='fixture error'));assert.equal(view.assertions[0].passed,true);assert.ok((await readFile(view.screenshotPath)).length>1000);
   const fromAgent=await fetch(`http://127.0.0.1:${session.port}/action`,{method:'POST',headers:{authorization:`Bearer ${session.token}`},body:JSON.stringify({action:'snapshot'})}).then(r=>r.json());assert.match(fromAgent.text,/Score: 1/);
-  await request({action:'check_start',cwd:dir,command:'printf "real check ran"; exit 2'});
+  await writeFile(join(dir,'check.cjs'), 'console.log("real check ran"); process.exit(2);');
+  await writeFile(join(dir,'server.cjs'), 'console.log("server alive"); setInterval(()=>{},1000);');
+  await request({action:'check_start',cwd:dir,command:'node check.cjs'});
   for(let i=0;i<30;i++){view=await request({action:'status'});if(view.check.status!=='running')break;await new Promise(r=>setTimeout(r,50));}
   assert.equal(view.check.status,'failed');assert.equal(view.check.exitCode,2);assert.match(view.check.output,/real check ran/);
-  await request({action:'check_start',cwd:dir,command:'sleep 30'});await request({action:'check_stop'});view=await request({action:'status'});assert.equal(view.check.status,'cancelled');
-  await request({action:'server_start',cwd:dir,command:'printf "server alive"; sleep 30'});view=await request({action:'status'});assert.equal(view.serverRunning,true);
+  await request({action:'check_start',cwd:dir,command:'node server.cjs'});await request({action:'check_stop'});view=await request({action:'status'});assert.equal(view.check.status,'cancelled');
+  await request({action:'server_start',cwd:dir,command:'node server.cjs'});view=await request({action:'status'});assert.equal(view.serverRunning,true);
   await request({action:'restart_server'});view=await request({action:'status'});assert.equal(view.serverRunning,true);
   await request({action:'stop'});view=await request({action:'status'});assert.equal(view.serverRunning,false);assert.equal(view.url,'');
  }finally {child.stdin.end();await new Promise(r=>child.once('exit',r));server.close();await rm(dir,{recursive:true,force:true});}

@@ -18,7 +18,7 @@ pub struct LaunchInfo {
 pub fn get_launch_info(state: State<'_, LaunchState>) -> LaunchInfo {
     LaunchInfo {
         initial_cwd: state.initial_cwd.as_ref().map(|p| p.display().to_string()),
-        home: std::env::var_os("HOME").map(|h| h.to_string_lossy().to_string()),
+        home: std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")).map(|h| h.to_string_lossy().to_string()),
         app_version: env!("CARGO_PKG_VERSION").to_string(),
     }
 }

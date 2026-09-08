@@ -38,7 +38,8 @@ HARNESS-UPGRADE.md
 *.pem
 *.key
 
-# This app ships macOS icons only; ignore extra Tauri icon-generator outputs.
+# Keep only desktop icons; ignore extra Tauri icon-generator outputs.
 src-tauri/icons/*
 !src-tauri/icons/32x32.png
 !src-tauri/icons/icon.icns
+!src-tauri/icons/icon.ico

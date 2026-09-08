@@ -52,7 +52,7 @@ export default function SpeechSettings() {
         <input id="fish-api-key" className="input" type="password" autoComplete="off" spellCheck={false} disabled={busy} value={key} placeholder={configured ? "Key saved · enter to replace" : "Paste your Fish API key"} onChange={(e) => setKey(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void save(); } }} />
         <button className="btn btn-primary btn-sm" disabled={busy || !key.trim()} onClick={() => void save()}>{busy ? "…" : "Save"}</button>
       </div>
-      <div className="speech-key-actions"><span>{configured ? "Saved in macOS Keychain" : configured === false ? "No key saved" : "Checking Keychain…"}</span><button onClick={() => open(KEY_URL)}>Get API key ↗</button>{configured && <button disabled={busy} onClick={() => void remove()}>Remove</button>}</div>
+      <div className="speech-key-actions"><span>{configured ? "Saved securely on this device" : configured === false ? "No key saved" : "Checking saved key…"}</span><button onClick={() => open(KEY_URL)}>Get API key ↗</button>{configured && <button disabled={busy} onClick={() => void remove()}>Remove</button>}</div>
       {error && <div className="speech-error" role="alert">{error} <button onClick={refresh}>Retry</button></div>}
       <div className="speech-options">
         <label>Speech tier<select className="select" value={settings.ttsFishModel} onChange={(e) => update({ ttsFishModel: e.target.value as typeof settings.ttsFishModel })}><option value="s2.1-pro-free">Free trial · if available</option><option value="s2.1-pro">Standard · uses credits</option></select></label>

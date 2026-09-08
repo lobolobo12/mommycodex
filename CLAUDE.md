@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-MommyCodex is a macOS Tauri 2 desktop app that wraps the **OpenAI Codex CLI**. It supplies its own
+MommyCodex is a macOS and Windows Tauri 2 desktop app that wraps the **OpenAI Codex CLI**. It supplies its own
 chat UI, an anime "mommy" persona layer, an approval flow, and a project workbench (live preview,
 build verification, task queue, project memory, undo). Codex itself is the engine — this repo never
 reimplements agent behavior, it drives `codex app-server` over JSON-RPC.
@@ -124,8 +124,7 @@ Each module owns a group of Tauri commands, all registered in `lib.rs`'s `invoke
   Git index**; a restore is refused entirely if any affected file changed since the task completed.
   Limits: 20,000 files / 256 MB. Stored under Tauri app data, keyed by hex-encoded canonical
   project path, split into ≤120-byte components to stay under `NAME_MAX`.
-- `speech.rs` — Fish Audio TTS + ASR. The API key lives **only in the macOS Keychain**
-  (`security-framework`); it must never reach settings, localStorage, or Codex prompts.
+- `speech.rs` — Fish Audio TTS + ASR. The API key lives **only in the macOS Keychain or Windows Credential Manager**; it must never reach settings, localStorage, or Codex prompts.
 - `microphone.rs` + `native/Microphone.swift` — `build.rs` compiles the Swift AVFoundation helper
   with `xcrun swiftc` into `resources/native/microphone` (gitignored build artifact).
 - `main.rs` — calls `fix_path_env::fix()` before anything spawns a child, because Finder-launched
@@ -152,7 +151,7 @@ the per-message "show original" toggle.
 | UI settings | `localStorage` key `mommycodex.settings.v1` (`src/settings.ts`) |
 | Task queue | `localStorage` key `mommycodex.harness.v1`; tasks `running` at load become `interrupted` and the queue starts paused, so uncertain work is never silently repeated |
 | Project memory, checkpoints | Tauri app data dir, per canonical project path (`workspace.rs`) |
-| Fish API key | macOS Keychain only |
+| Fish API key | macOS Keychain / Windows Credential Manager |
 
 Codex's own global settings and any `AGENTS.md` are never modified by this app.
 
@@ -164,7 +163,7 @@ Codex's own global settings and any `AGENTS.md` are never modified by this app.
   file you're editing rather than reformatting it.
 - Comments in this codebase explain non-obvious constraints (protocol quirks, ordering, security
   guards). Keep that bar; don't add narration.
-- macOS-only in practice: Keychain, the Swift helper, `/bin/kill`, and the install script.
+- Platform overlays select Mac app/DMG or Windows NSIS installers. `windows.rs` owns Windows key storage and isolated audio helper modes; the Mac install script is Mac-only. Keep Windows commands and process cleanup portable.
 
 ## Project status
 
