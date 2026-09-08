@@ -1,0 +1,15 @@
+#!/bin/sh
+# Launch MommyCodex on a project directory (defaults to the current one).
+#   mommycodex            # open the current directory
+#   mommycodex ~/proj     # open a specific directory
+# Set MOMMYCODEX_APP to point at a custom .app bundle.
+DIR="${1:-$PWD}"
+DIR="$(cd "$DIR" 2>/dev/null && pwd -P)" || { echo "mommycodex: no such directory: $1" >&2; exit 1; }
+for APP in "$MOMMYCODEX_APP" "$HOME/Applications/MommyCodex.app" "/Applications/MommyCodex.app" \
+           "$HOME/mommycodex/src-tauri/target/release/bundle/macos/MommyCodex.app"; do
+  if [ -n "$APP" ] && [ -d "$APP" ]; then
+    exec open -n -a "$APP" --args "$DIR"
+  fi
+done
+echo "mommycodex: MommyCodex.app not found; run 'pnpm run install:app' in ~/mommycodex" >&2
+exit 1

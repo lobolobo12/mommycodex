@@ -1,0 +1,427 @@
+/* ------------------------------------------------------------------
+   Semantic tokens. Mommy-chan (default) is pastel pink and lavender.
+   Nyx redefines every token under [data-character="nyx"] for a
+   midnight goth palette. Layout never changes between the two.
+   ------------------------------------------------------------------ */
+:root {
+  --pink-50: #fff6fa;
+  --pink-100: #ffe6f0;
+  --pink-200: #ffcde0;
+  --pink-300: #ffabcb;
+  --pink-400: #ff85b5;
+  --pink-500: #f2589b;
+  --pink-600: #d63d82;
+  --lav-100: #f0eaff;
+  --lav-200: #ddd0ff;
+  --lav-300: #c4b0fc;
+  --lav-400: #a98cf4;
+  --lav-500: #8b67e8;
+  --mint-200: #c9f5e6;
+  --mint-500: #3fbf98;
+  --peach-200: #ffe3cc;
+  --peach-500: #f59a5b;
+
+  --bg: #f6f1f7;
+  --bg-glow: none;
+  --surface: #fcf9fc;
+  --surface-2: #f2edf6;
+  --surface-3: #ebe2f0;
+  --toolbar: #fdfbfd;
+  --input-bg: #ffffff;
+  --tool-bg: rgba(255, 255, 255, 0.72);
+  --ghost-hover: rgba(255, 255, 255, 0.6);
+  --card: #ffffff;
+  --card-solid: #ffffff;
+  --border: #eadfe9;
+  --border-soft: #ede3ee;
+  --border-strong: #d3b3d9;
+
+  --ink: #44374d;
+  --ink-soft: #7c6e85;
+  --ink-faint: #897592;
+  --icon-faint: #c8b6cf;
+  --muted: #8e7897;
+  --muted-2: #a28dad;
+  --heading: #49374f;
+
+  --accent: #a269ad;
+  --accent-strong: #8e559a;
+  --accent-text: #9565a3;
+  --accent-soft: #f0e7f6;
+  --accent-fg: #ffffff;
+  --rose: #bd7297;
+  --rose-soft: #faeaf1;
+  --violet-text: #9463ac;
+  --violet-soft: #f0e7f8;
+
+  --ok-text: #7b9d8a;
+  --ok-strong: #1e8f6c;
+  --ok-soft: #f1f8f4;
+  --ok-border: #dcebe3;
+  --ok-dot: #83b299;
+  --warn-text: #b8611f;
+  --danger: #e5486f;
+  --danger-soft: #ffe1e8;
+  --danger-soft-hover: #ffcbd8;
+  --danger-border: #ffb3c5;
+
+  --code-bg: #2f2440;
+  --code-fg: #e9defc;
+  --code-fg-bright: #f4ecff;
+  --diff-add: #9be29b;
+  --diff-del: #ff9db1;
+  --diff-hunk: #b7a5ff;
+
+  --user-bubble: #a576b0;
+  --user-bubble-fg: #ffffff;
+  --backdrop: rgba(74, 51, 80, 0.35);
+  --switch-off: #cfbfd4;
+  --switch-knob: #ffffff;
+
+  --orbit: radial-gradient(circle at 35% 30%, #f7e5ef, #e9def3);
+  --orbit-ring: #f6edf7;
+  --orbit-ring-2: #ece1ef;
+  --spark: #d5adc2;
+  --spark-2: #bba8d3;
+  --avatar-bg: #efe3f4;
+  --portrait-bg: #fdf8fc;
+  --portrait-border: #eddfef;
+  --panel-gradient: linear-gradient(180deg, #fdf8fc, #fbf8fc 65%);
+
+  --radius-card: 20px;
+  --radius-pill: 999px;
+  --shadow-soft: 0 4px 20px rgba(75, 43, 83, 0.035);
+  --shadow-pop: 0 18px 50px rgba(139, 103, 232, 0.25);
+  --font: "Avenir Next", "Nunito", "Avenir Next Rounded", "Hiragino Maru Gothic ProN", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-display: var(--font);
+  --mono: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+
+/* Nyx: black lace, moonlight, silver crescents, violet highlights. */
+:root[data-character="nyx"] {
+  --pink-50: #17111f;
+  --pink-100: #2a1c33;
+  --pink-200: #3d2749;
+  --pink-300: #6a3f7c;
+  --pink-400: #b56ad1;
+  --pink-500: #cf7fe4;
+  --pink-600: #e4a9f0;
+  --lav-100: #241a37;
+  --lav-200: #33264f;
+  --lav-300: #5a4587;
+  --lav-400: #8d6dd8;
+  --lav-500: #bea6ff;
+  --mint-200: #14261f;
+  --mint-500: #5fcf9d;
+  --peach-200: #33251a;
+  --peach-500: #f0a45b;
+
+  --bg: #0d0a12;
+  --bg-glow: radial-gradient(ellipse 60% 45% at 18% -8%, rgba(126, 84, 214, 0.22), transparent 70%),
+    radial-gradient(ellipse 40% 35% at 92% 110%, rgba(190, 120, 220, 0.12), transparent 70%);
+  --surface: #15101c;
+  --surface-2: #1e1728;
+  --surface-3: #292034;
+  --toolbar: #130e1a;
+  --input-bg: #110d17;
+  --tool-bg: rgba(23, 18, 31, 0.86);
+  --ghost-hover: rgba(255, 255, 255, 0.06);
+  --card: #17121f;
+  --card-solid: #17121f;
+  --border: #2d2339;
+  --border-soft: #271e32;
+  --border-strong: #6a4f8a;
+
+  --ink: #e9e2f2;
+  --ink-soft: #b3a6c4;
+  --ink-faint: #7f7292;
+  --icon-faint: #4f4262;
+  --muted: #9c8fae;
+  --muted-2: #7f7391;
+  --heading: #f4eefb;
+
+  --accent: #9b6cf5;
+  --accent-strong: #b58cff;
+  --accent-text: #c4a6ff;
+  --accent-soft: #2a1f40;
+  --accent-fg: #ffffff;
+  --rose: #e878a8;
+  --rose-soft: #3a1f31;
+  --violet-text: #bc98ff;
+  --violet-soft: #2d2146;
+
+  --ok-text: #7fd6b0;
+  --ok-strong: #8de6bd;
+  --ok-soft: #142620;
+  --ok-border: #1f3b30;
+  --ok-dot: #5fcf9d;
+  --warn-text: #f0a45b;
+  --danger: #ff5c8a;
+  --danger-soft: #3b1626;
+  --danger-soft-hover: #4d1c31;
+  --danger-border: #7a2a46;
+
+  --code-bg: #0a0710;
+  --code-fg: #d9cfeb;
+  --code-fg-bright: #efe8fb;
+  --diff-add: #8ee6a8;
+  --diff-del: #ff8fae;
+  --diff-hunk: #b9a3ff;
+
+  --user-bubble: linear-gradient(135deg, #5b3a92, #3a2562);
+  --user-bubble-fg: #f3ecff;
+  --backdrop: rgba(3, 1, 8, 0.72);
+  --switch-off: #3a2d4a;
+  --switch-knob: #d9cdee;
+
+  --orbit: radial-gradient(circle at 35% 30%, #3b2a58, #150f1f 72%);
+  --orbit-ring: #211a2e;
+  --orbit-ring-2: #33274a;
+  --spark: #d6c8ff;
+  --spark-2: #8f6dd8;
+  --avatar-bg: #241a30;
+  --portrait-bg: #1a1324;
+  --portrait-border: #4a3763;
+  --panel-gradient: linear-gradient(180deg, #16111e, #120d19 65%);
+
+  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.35);
+  --shadow-pop: 0 18px 50px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(155, 108, 245, 0.25);
+  --font-display: "Didot", "Bodoni 72", "Palatino", "Palatino Linotype", "Georgia", serif;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--font);
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--bg-glow), var(--bg);
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+::selection {
+  background: var(--pink-200);
+}
+
+button,
+select,
+input,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: var(--radius-pill);
+  background: var(--pink-100);
+  color: var(--pink-600);
+  font-weight: 700;
+  transition: transform 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
+}
+.btn:hover {
+  background: var(--pink-200);
+  transform: translateY(-1px);
+}
+.btn:active {
+  transform: translateY(0) scale(0.98);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+.btn-primary {
+  background: var(--accent);
+  color: var(--accent-fg);
+  box-shadow: 0 3px 8px rgba(130, 76, 145, 0.14);
+}
+.btn-primary:hover {
+  background: var(--accent-strong);
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--ink-soft);
+}
+.btn-ghost:hover {
+  background: var(--ghost-hover);
+}
+.btn-danger {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.btn-danger:hover {
+  background: var(--danger-soft-hover);
+}
+.btn-sm {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 9px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  background: var(--lav-100);
+  color: var(--lav-500);
+}
+.pill-ok {
+  background: var(--mint-200);
+  color: var(--ok-strong);
+}
+.pill-warn {
+  background: var(--peach-200);
+  color: var(--warn-text);
+}
+.pill-bad {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.pill-run {
+  background: var(--pink-100);
+  color: var(--pink-600);
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-soft);
+
+}
+
+select.select,
+input.input,
+textarea.textarea {
+  border: 1.5px solid var(--border);
+  background: var(--card-solid);
+  border-radius: 12px;
+  padding: 6px 10px;
+  outline: none;
+  user-select: text;
+  -webkit-user-select: text;
+}
+select.select:focus,
+input.input:focus,
+textarea.textarea:focus {
+  border-color: var(--pink-300);
+  box-shadow: 0 0 0 3px rgba(255, 171, 203, 0.35);
+}
+:root[data-character="nyx"] select.select:focus,
+:root[data-character="nyx"] input.input:focus,
+:root[data-character="nyx"] textarea.textarea:focus {
+  box-shadow: 0 0 0 3px rgba(155, 108, 245, 0.3);
+}
+
+code,
+pre {
+  font-family: var(--mono);
+  font-size: 12.5px;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--pink-200);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--pink-300);
+  background-clip: padding-box;
+}
+
+@keyframes sparkle {
+  0%,
+  100% {
+    opacity: 0.2;
+    transform: scale(0.6) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1) rotate(20deg);
+  }
+}
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.ui-icon { flex: none; vertical-align: middle; }
+button, summary, a, [tabindex] { -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+button:disabled:hover { transform: none; }
+.icon-button { width: 34px; height: 34px; justify-content: center; padding: 0; border-radius: 10px; }
+.section-label { display: flex; align-items: center; justify-content: space-between; font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint); }
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinning { animation: spin 1.2s linear infinite; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+
+/* Nyx typography: elegant serif display faces on the few large headings; body stays readable sans. */
+:root[data-character="nyx"] .brand,
+:root[data-character="nyx"] .companion-name,
+:root[data-character="nyx"] .chat-empty h1,
+:root[data-character="nyx"] .modal .head,
+:root[data-character="nyx"] .workbench-heading h2 {
+  font-family: var(--font-display);
+  letter-spacing: 0.01em;
+  font-weight: 600;
+}
+:root[data-character="nyx"] .brand { font-size: 21px; }
+:root[data-character="nyx"] .chat-empty h1 { font-weight: 500; letter-spacing: -0.01em; }
+:root[data-character="nyx"] .welcome-eyebrow { color: var(--accent-text); letter-spacing: 0.28em; }
+:root[data-character="nyx"] .msg.user .bubble { border: 1px solid rgba(190, 166, 255, 0.18); }
+:root[data-character="nyx"] .card,
+:root[data-character="nyx"] .msg.assistant .bubble { box-shadow: var(--shadow-soft), inset 0 1px 0 rgba(255, 255, 255, 0.03); }
+:root[data-character="nyx"] .mascot-orbit { box-shadow: 0 0 0 9px var(--orbit-ring), 0 0 0 10px var(--orbit-ring-2), 0 0 60px rgba(155, 108, 245, 0.18); }

@@ -1,0 +1,1 @@
+export const CODEX_PROTOCOL_CLI_VERSION = "0.153.4";
