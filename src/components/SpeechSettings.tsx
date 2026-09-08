@@ -58,7 +58,7 @@ export default function SpeechSettings() {
         <label>Speech tier<select className="select" value={settings.ttsFishModel} onChange={(e) => update({ ttsFishModel: e.target.value as typeof settings.ttsFishModel })}><option value="s2.1-pro-free">Free trial · if available</option><option value="s2.1-pro">Standard · uses credits</option></select></label>
         <label>Speed<select className="select" value={settings.ttsSpeed} onChange={(e) => update({ ttsSpeed: Number(e.target.value) })}><option value={0.85}>Relaxed</option><option value={1}>Normal</option><option value={1.15}>Quick</option></select></label>
       </div>
-      <label className="row">Auto-read finished replies<input type="checkbox" checked={settings.ttsAutoRead} disabled={(!configured && !settings.ttsAutoRead) || busy} onChange={(e) => update({ ttsAutoRead: e.target.checked })} /></label>
+      <p className="hint">Use /voice on or /voice off for automatic reading.</p>
       <button className={`btn ${reading ? "btn-danger" : "btn-primary"} voice-preview`} disabled={!reading && (!configured || busy)} onClick={() => reading ? void speech.stop() : void speech.play("voice-preview", voice.preview, "preview")}><Icon name={reading ? "stop" : "speaker"} size={14} />{reading ? speechStatus === "loading" ? "Cancel voice generation" : "Stop reading" : `Try ${voice.name}’s voice`}</button>
       <p className="hint">Voice follows the selected companion. Reads original reply text, skipping code. Spoken text is sent to Fish Audio. Auto-read starts off. API credits are separate from Fish subscriptions; free-trial availability varies.</p>
     </section>

@@ -31,7 +31,7 @@ try {
   assert.equal(await page.getByLabel('Open thread: Sweet game').count(),1);
   await page.getByRole('button',{name:'Switch to Nyx',exact:true}).click();
   await page.locator('.composer').evaluate(el=>{const d=new DataTransfer();d.items.add(new File([Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLbtAAAAABJRU5ErkJggg=='),c=>c.charCodeAt(0))],'reference.png',{type:'image/png'}));el.dispatchEvent(new DragEvent('drop',{bubbles:true,dataTransfer:d}));});
-  await page.getByLabel('Build with this visual style').waitFor();
+  await page.getByText('Build with this visual style · /reference to change',{exact:true}).waitFor();
   assert.equal(await page.getByAltText('reference.png').count(),1);
   await page.evaluate(async()=>{
     const {useAppStore:s}=await import('/src/codex/store.ts');

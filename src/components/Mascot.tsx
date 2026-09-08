@@ -171,7 +171,6 @@ export default function MascotPanel() {
       <div className="caption">{voiceStatus === "playing" ? `${name} is speaking…` : reaction.text || caption}</div>
       {voiceStatus && <button className="btn btn-ghost" onClick={() => void speech.stop()}>{voiceStatus === "loading" ? "Cancel voice generation" : "Interrupt voice"}</button>}
       {voiceStatus === "playing" && <div className="speaking-bars" aria-label={`${name} is speaking`}><i/><i/><i/><i/><i/></div>}
-      <label className="companion-preference"><input type="checkbox" checked={settings.reactionVoice} onChange={e=>useAppStore.getState().updateSettings({reactionVoice:e.target.checked})}/> Speak short reactions</label>
       <details className="expression-gallery"><summary>Preferences for {name}</summary><textarea aria-label="Companion preferences" maxLength={4000} rows={3} placeholder="How should she talk and build for you?" value={settings.companionNotes} onChange={e=>useAppStore.getState().updateSettings({companionNotes:e.target.value})}/><p className="hint">Saved separately for each companion. Applies to the next task.</p></details>
       <details className="expression-gallery">
         <summary>5 expressions <Icon name="chevron" size={12} /></summary>

@@ -122,7 +122,7 @@ You can draft while disconnected; sending becomes available once Codex and a pro
   starting a new task stops speech. Temporary audio is removed after playback or stop.
   Fish voice generation requires internet access and a valid key with access to the
   chosen tier. Replies up to 10,000 spoken characters are supported.
-- **Mommy building:** the sparkle switch beside Mommy mode makes open-ended builds use an uwu
+- **Mommy building:** `/building on` makes open-ended builds use an uwu
   anime mommy theme in the actual game, site, or app: characters, visuals, interactions, and visible
   copy. It works independently of the chat voice, remembers its setting, and defaults to off.
   Switch it before sending a task; finish or stop a running task before changing it. Existing
@@ -150,14 +150,14 @@ See the [official App Server documentation](https://learn.chatgpt.com/docs/app-s
 
 ## Settings
 
-Top bar: model and reasoning effort. Conversation toolbar: Mommy mode, Mommy building, review, and reasoning cards.
+The conversation toolbar keeps the companion picker and personality switch. Type `/` in the composer for the other controls: `/model`, `/effort`, `/building on|off`, `/proposals on|off`, `/reasoning on|off`, `/voice on|off`, `/reactions on|off`, `/review`, `/preview`, `/queue`, `/memory`, `/checkpoints`, `/github`, `/handoff`, `/new`, `/projects`, `/settings`, `/reconnect`, and `/stop`. Arrow keys select, Tab completes, Enter runs, and Escape closes the menu. Commands run locally without becoming chat messages; unavailable actions show why. `/reference on|off` controls image building references; `/threads on|off` chooses whether to list all projects.
 Gear menu: approvals reviewer (`user` = ask you, `auto_review` = Codex decides), sandbox
 (`read-only` asks before edits, `workspace-write` auto-edits inside the project), thread list scope,
 and a custom path to the `codex` binary.
 
 ## Project workbench
 
-Open **Workbench** from the conversation toolbar. Its tabs share the selected project.
+Type `/preview` to open **Workbench**. Its tabs share the selected project.
 
 - **Preview:** save a run command and localhost URL in Project memory, start the server, then Open
   the URL. The interactive panel shows an isolated Chrome browser; click it and use the keyboard
@@ -212,7 +212,7 @@ The companion picker now opens separate chat lists and restores that companion�
 
 Drop, paste, or attach reference images. **Build with this visual style** asks Codex to inspect the images’ layout and style while keeping the requested functionality. The existing image limits still apply (four attachments, 8 MB per image).
 
-The task checklist follows Codex’s actual plan events and shows when input is needed. Portrait reactions follow task completion and check-command results. **Speak short reactions** is opt-in and uses the selected companion’s Fish voice and API credits. It does not interrupt speech or compete with automatic reply reading.
+The task checklist follows Codex’s actual plan events and shows when input is needed. Portrait reactions follow task completion and check-command results. `/reactions on` is opt-in and uses the selected companion’s Fish voice and API credits. It does not interrupt speech or compete with automatic reply reading.
 
 **Review before keeping** is on by default. Tasks temporarily edit source files while running. At completion the app saves the proposed changes and restores the starting source files, then opens **Workbench → Review & undo**. Inspect before/proposed contents and accept or discard. Accept and undo refuse conflicting newer edits. Proposals survive restarts; the queue pauses for review. A build verification run is collected as one proposal after its attempts finish. Accept that proposal to retain the verified files. Git-ignored files, build outputs, external side effects, and Git staging are outside source snapshots.
 

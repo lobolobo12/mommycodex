@@ -1,3 +1,5 @@
+import SlashMenu from "./SlashMenu";
+import { commands, commandOptions, runCommand, type CommandOption } from "../commands";
 import { useDictationStore } from "../speech/dictation";
 import VoiceInput from "./VoiceInput";
 import { useEffect, useRef, useState, type Dispatch, type RefObject, type SetStateAction } from "react";
@@ -18,8 +20,35 @@ export default function Composer({ attachments, setAttachments, text, setText, i
   const pushToast = useAppStore((s) => s.pushToast);
   const character = useAppStore((s) => s.settings.character);
   const seriousMode = useAppStore((s) => s.settings.seriousMode);
-  const [dragging, setDragging] = useState(false);
+  // Subscribe to command state so current values and busy guards update in the palette.
+  useAppStore(s => s.settings);
+  useAppStore(s => s.models);
+  const [commandIndex, setCommandIndex] = useState(0);
+  const [dismissed, setDismissed] = useState(false);
+  const [commandBusy, setCommandBusy] = useState(false);
+  const commandLock = useRef(false);
   const [useAsReference, setUseAsReference] = useState(true);
+  const isCommand = /^\/[a-z-]*(?:\s.*)?$/i.test(text) && !text.includes("\n");
+  const options = isCommand ? commandOptions(text,[...commands(),{name:"help",description:"Show all available commands",run:()=>setText("/")},{name:"reference",description:"Use attached images as building references",value:useAsReference?"on":"off",choices:[{value:"on",label:"Use the visual style"},{value:"off",label:"Attach without a build-style instruction"}],run:value=>setUseAsReference(value==="on")}]) : [];
+  const menuOpen = isCommand && !dismissed;
+  const selected = Math.min(commandIndex, Math.max(0, options.length - 1));
+  useEffect(() => { setCommandIndex(0); setDismissed(false); }, [text, character]);
+  const choose = async (option: CommandOption) => {
+    if (commandLock.current) return;
+    if (option.disabled) { pushToast("warning", option.disabled); return; }
+    if (option.command.choices && option.argument === undefined) {
+      setText(`/${option.command.name} `); ref.current?.focus(); return;
+    }
+    commandLock.current = true; setCommandBusy(true);
+    const original = text;
+    try {
+      await runCommand(option.command, option.argument);
+      setText(current => current === original ? "" : current);
+      pushToast("info", `${option.label} applied`);
+    } catch (error) { pushToast("error", errorMessage(error)); }
+    finally { commandLock.current = false; setCommandBusy(false); ref.current?.focus(); }
+  };
+  const [dragging, setDragging] = useState(false);
   const [reading, setReading] = useState(false);
   const readLock = useRef(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -57,7 +86,13 @@ export default function Composer({ attachments, setAttachments, text, setText, i
 
   const submit = () => {
     const t = text.trim();
-    if (!hasContent || !ready) return;
+    if (isCommand) {
+      const option = options[selected];
+      if (option) void choose(option);
+      else pushToast("warning", "Unknown command or value. Type / to see available commands.");
+      return;
+    }
+    if (!hasContent || !ready || commandBusy) return;
     const sentAttachments = attachments;
     setText("");
     setAttachments([]);
@@ -71,9 +106,10 @@ export default function Composer({ attachments, setAttachments, text, setText, i
 
   return (
     <div className="composer-wrap">
+      {menuOpen && <SlashMenu options={options} selected={selected} choose={option=>void choose(option)} />}
       <div className={`composer ${dragging ? "is-dragging" : ""}`} onDragOver={e=>{if(e.dataTransfer.types.includes('Files')){e.preventDefault();setDragging(true);}}} onDragLeave={e=>{if(!e.currentTarget.contains(e.relatedTarget as Node))setDragging(false);}} onDrop={e=>{e.preventDefault();setDragging(false);void attach(Array.from(e.dataTransfer.files));}}>
         {dragging && <div role="status">Drop your reference images here</div>}
-        {attachments.some(a=>a.preview) && <label className="reference-option"><input type="checkbox" checked={useAsReference} onChange={e=>setUseAsReference(e.target.checked)}/> Build with this visual style</label>}
+        {attachments.some(a=>a.preview) && <span className="reference-option">{useAsReference ? "Build with this visual style" : "Images attached"} · /reference to change</span>}
         <input ref={fileRef} type="file" multiple hidden aria-label="Choose attachments" onChange={(e) => { void attach(Array.from(e.target.files ?? [])); e.target.value = ""; }} />
         {attachments.length > 0 && <div className="attachment-list" aria-label="Message attachments">
           {attachments.map((attachment) => <div className="attachment-chip" key={attachment.id}>
@@ -86,6 +122,10 @@ export default function Composer({ attachments, setAttachments, text, setText, i
           ref={ref}
           className="textarea"
           aria-label="Message"
+          aria-autocomplete="list"
+          aria-controls={menuOpen ? "slash-commands" : undefined}
+          aria-expanded={menuOpen}
+          aria-activedescendant={menuOpen && options.length ? `slash-option-${selected}` : undefined}
           placeholder={
             !cwd
               ? "Pick a project, then tell me what you have in mind…"
@@ -95,9 +135,16 @@ export default function Composer({ attachments, setAttachments, text, setText, i
           }
           value={text}
           onPaste={(e) => { if (e.clipboardData.files.length) { e.preventDefault(); void attach(Array.from(e.clipboardData.files)); } }}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => { setDismissed(false); setCommandIndex(0); setText(e.target.value); }}
           onKeyDown={(e) => {
             if (e.nativeEvent.isComposing) return;
+            if (menuOpen && ["ArrowDown", "ArrowUp", "Tab", "Escape"].includes(e.key)) {
+              e.preventDefault();
+              if (e.key === "Escape") setDismissed(true);
+              else if (e.key === "Tab" && options[selected]) { setText(options[selected].label + (options[selected].command.choices && options[selected].argument === undefined ? " " : "")); }
+              else if (options.length) setCommandIndex((selected + (e.key === "ArrowUp" ? -1 : 1) + options.length) % options.length);
+              return;
+            }
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
               submit();
@@ -118,14 +165,14 @@ export default function Composer({ attachments, setAttachments, text, setText, i
             <Icon name="stop" size={14} /> Stop
           </button>
         )}
-          <button className="btn btn-primary send-button" onClick={submit} disabled={!ready || !hasContent} title={runningHere ? "Send a follow-up to the running task (Enter)" : "Send message (Enter)"}>
-            {submissionPending ? "Sending…" : runningHere && !reviewing ? "Follow up" : "Send"} <Icon name="arrow" size={16} />
+          <button className="btn btn-primary send-button" onClick={submit} disabled={commandBusy || !hasContent || (!isCommand && !ready)} title={runningHere ? "Send a follow-up to the running task (Enter)" : "Send message (Enter)"}>
+            {isCommand ? commandBusy ? "Running…" : "Run" : submissionPending ? "Sending…" : runningHere && !reviewing ? "Follow up" : "Send"} <Icon name="arrow" size={16} />
           </button>
           </div>
         </div>
       </div>
       <div className="hint">
-        {runningHere && reviewing ? "Reviewing changes · Esc to stop" : runningHere ? "Add a follow-up while Codex works · Esc to stop" : activeTurn ? "Another conversation is running" : <><kbd>↵</kbd> to send <span>·</span> drop or paste a reference <span>·</span> <kbd>shift ↵</kbd> for a new line</>}
+        {runningHere && reviewing ? "Reviewing changes · Esc to stop" : runningHere ? "Add a follow-up while Codex works · Esc to stop" : activeTurn ? "Another conversation is running" : <><kbd>/</kbd> for commands <span>·</span> <kbd>↵</kbd> to send <span>·</span> drop or paste a reference <span>·</span> <kbd>shift ↵</kbd> for a new line</>}
       </div>
     </div>
   );

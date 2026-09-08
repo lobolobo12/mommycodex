@@ -1,3 +1,4 @@
+import { useCommandUI } from "../commands";
 import { useState } from "react";
 import { session } from "../codex/session";
 import { useAppStore } from "../codex/store";
@@ -9,7 +10,6 @@ import { speech, useSpeechStore } from "../speech/controller";
 
 export default function TopBar() {
   const connection = useAppStore((s) => s.connection);
-  const models = useAppStore((s) => s.models);
   const settings = useAppStore((s) => s.settings);
   const update = useAppStore((s) => s.updateSettings);
   const activeThreadId = useAppStore((s) => s.activeThreadId);
@@ -17,7 +17,7 @@ export default function TopBar() {
   const reading = useSpeechStore((s) => s.activeKey !== null);
 
   const model = session.currentModel();
-  const efforts = model?.supportedReasoningEfforts ?? [];
+  const settingsOpen = useCommandUI(s=>s.settingsOpen);
   const effortValue = settings.effort ?? model?.defaultReasoningEffort ?? "";
 
   const reapplyPersona = () => {
@@ -47,35 +47,7 @@ export default function TopBar() {
         <span>Mommy<span className="brand-accent">Codex</span><small>Your cozy coding space</small></span>
       </div>
       <div className="spacer" />
-      <label className="control">
-        Model
-        <select
-          className="select"
-          value={settings.model ?? model?.model ?? ""}
-          onChange={(e) => update({ model: e.target.value || null, effort: null })}
-        >
-          {models.length === 0 && <option value="">Connecting…</option>}
-          {models
-            .filter((m) => !m.hidden || m.model === settings.model)
-            .map((m) => (
-              <option key={m.id} value={m.model}>
-                {m.displayName || m.model}
-              </option>
-            ))}
-        </select>
-      </label>
-
-      <label className="control">
-        Effort
-        <select className="select" value={effortValue} onChange={(e) => update({ effort: e.target.value || null })}>
-          {efforts.length === 0 && <option value="">default</option>}
-          {efforts.map((o) => (
-            <option key={o.reasoningEffort} value={o.reasoningEffort} title={o.description}>
-              {o.reasoningEffort}
-            </option>
-          ))}
-        </select>
-      </label>
+      <span className="model-status" title="Use /model and /effort to change these">{model?.displayName || settings.model || "Codex"} · {effortValue || "default"}</span>
 
       <div className={`conn ${connection.state}`} title={connLabel}>
         <span className="dot" />
@@ -87,7 +59,7 @@ export default function TopBar() {
       </button>
 
       {reading && <button className="btn btn-ghost icon-button speech-stop" onClick={() => void speech.stop()} title="Stop reading (Esc)" aria-label="Stop reading"><Icon name="stop" /></button>}
-      <details className="settings-pop">
+      <details className="settings-pop" open={settingsOpen} onToggle={e=>useCommandUI.setState({settingsOpen:e.currentTarget.open})}>
         <summary className="btn btn-ghost icon-button" title="Settings" aria-label="Settings">
           <Icon name="settings" />
         </summary>
@@ -123,17 +95,6 @@ export default function TopBar() {
               <option value="danger-full-access">danger: full access</option>
             </select>
             <span className="hint">Applies to new threads and when re-opening a thread.</span>
-          </label>
-          <label className="row">
-            list threads from all projects
-            <input
-              type="checkbox"
-              checked={settings.listAllProjects}
-              onChange={(e) => {
-                update({ listAllProjects: e.target.checked });
-                session.refreshThreads().catch(() => undefined);
-              }}
-            />
           </label>
           <label>
             codex binary path (optional)

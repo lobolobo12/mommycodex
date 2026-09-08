@@ -42,3 +42,17 @@
 .workbench-tabs { flex-wrap:wrap; }
 
 .github-panel input[type=checkbox] { width:14px; height:14px; margin-right:8px; vertical-align:middle; }
+
+/* Composer commands use the selected companion's existing palette. */
+.composer-wrap { position: relative; }
+.slash-menu { position: absolute; bottom: calc(100% - 8px); left: 16px; right: 16px; z-index: 30; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); box-shadow: 0 12px 40px #0003; padding: 8px; }
+.slash-heading { display:flex; justify-content:space-between; gap:12px; padding:8px; font-size:12px; color:var(--ink-soft); }
+.slash-heading span { font-size:10px; }
+.slash-menu [role="listbox"] { max-height: 280px; overflow-y:auto; }
+.slash-menu [role="option"] { display:flex; align-items:center; gap:14px; width:100%; text-align:left; padding:11px 12px; border:0; border-radius:8px; background:transparent; color:var(--ink); cursor:pointer; }
+.slash-menu [role="option"] code { min-width:110px; font-size:13px; }
+.slash-menu [role="option"] > span { flex:1; font-size:12px; color:var(--ink-soft); }
+.slash-menu [role="option"][aria-selected="true"] { background:var(--accent-soft); }
+.slash-menu [aria-disabled="true"] { opacity:.5; }
+.slash-menu p { padding:12px; font-size:13px; }
+.model-status { font-size:12px; color:var(--ink-soft); max-width:320px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
