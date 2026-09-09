@@ -26,7 +26,6 @@ export class HarnessController implements SessionExtensions {
     const promise=(async()=>{
       const memory=await api.memoryLoad(cwd);
       useHarnessStore.setState(s=>({memories:{...s.memories,[cwd]:{...api.emptyMemory,...memory}}}));
-      this.browserInfo ??= await api.browserAction({action:'info'});
     })().finally(()=>this.preparing.delete(cwd));
     this.preparing.set(cwd,promise);return promise;
   }
@@ -149,7 +148,13 @@ export class HarnessController implements SessionExtensions {
     try {await api.checkpointUndo(cwd,id);await this.refreshCheckpoints(cwd);}
     finally{useHarnessStore.setState({busy:false});}
   }
-  async preview(action:Record<string,unknown>){const result=await api.browserAction(action);if(result.url!==undefined)useHarnessStore.setState(s=>({browser:{...s.browser,...result}}));return result;}
+  async preview(action:Record<string,unknown>){
+    // Launch the optional helper only when preview functionality is requested.
+    this.browserInfo = await api.browserAction({action:'info'});
+    const result=await api.browserAction(action);
+    if(result.url!==undefined)useHarnessStore.setState(s=>({browser:{...s.browser,...result}}));
+    return result;
+  }
   async startServer(cwd:string){await this.prepare(cwd);const m=useHarnessStore.getState().memories[cwd];await this.preview({action:'server_start',cwd,command:m.runCommand});}
   async verify(cwd:string){
     const app=useAppStore.getState();if(app.activeTurn||app.submissionPending||useHarnessStore.getState().busy)throw Error('Finish or stop the current task first.');

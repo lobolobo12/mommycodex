@@ -23,6 +23,16 @@ beforeEach(()=>{
 });
 afterEach(()=>{vi.clearAllTimers();vi.useRealTimers();});
 describe('project memory and snapshots',()=>{
+ it('prepares chat and task checkpoints without starting the optional preview helper',async()=>{
+  vi.mocked(api.browserAction).mockRejectedValue(Error('Preview service stopped. Restart the preview.'));
+  const h=new HarnessController();
+  await h.prepare('/tmp/project');
+  await h.beforeTask('/tmp/project','thread','fix');
+  expect(h.instructions('/tmp/project')).toContain('React');
+  expect(api.checkpointStart).toHaveBeenCalled();
+  expect(api.browserAction).not.toHaveBeenCalled();
+  await expect(h.preview({action:'snapshot'})).rejects.toThrow('Preview service stopped');
+ });
  it('loads scoped memory into instructions and saves changes',async()=>{const h=new HarnessController();await h.prepare('/tmp/project');expect(h.instructions('/tmp/project')).toContain('React');expect(h.instructions('/another')).not.toContain('"stack":"React"');const save=vi.spyOn(api,'memorySave').mockResolvedValue();await h.saveMemory('/tmp/project',{...api.emptyMemory,preferences:'Use purple'});expect(save).toHaveBeenCalledWith('/tmp/project',expect.objectContaining({preferences:'Use purple'}));expect(h.instructions('/tmp/project')).toContain('Use purple');});
  it('captures before a task and finalizes once even with duplicate completion',async()=>{const h=new HarnessController();await h.beforeTask('/tmp/project','thread','fix');await h.completed('thread',done());await h.completed('thread',done());expect(api.checkpointStart).toHaveBeenCalledBefore(vi.mocked(api.checkpointFinish));expect(api.checkpointFinish).toHaveBeenCalledTimes(1);});
  it('does not finalize a checkpoint when a follow-up is rejected',async()=>{const s=new CodexSession();const h=new HarnessController();s.extensions=h;await h.beforeTask('/tmp/project','thread','task');useAppStore.setState({activeThreadId:'thread',activeTurn:{threadId:'thread',turnId:'turn',status:'inProgress'}});vi.spyOn(transport,'rpc').mockRejectedValue(Error('rejected'));await expect(s.send('follow up')).rejects.toThrow('rejected');expect(api.checkpointFinish).not.toHaveBeenCalled();});
