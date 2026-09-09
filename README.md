@@ -14,7 +14,17 @@ Code, diffs, commands, paths, and identifiers stay unchanged by the chat styling
 
 ## Download
 
-Get the **[desktop releases](https://github.com/lobolobo12/mommycodex/releases)**. On Windows 10/11 x64, run the `-setup.exe` installer; it installs for your account and downloads WebView2 if needed. The Windows installer is unsigned. On Apple Silicon Macs, extract the ZIP and move the app to Applications; Intel Mac users can build from source. Release notes list the exact artifacts and verification status.
+**Windows 10/11 x64: [Download the easy setup ZIP](https://github.com/lobolobo12/mommycodex/releases/download/v0.2.1/MommyCodex-Windows-Setup.zip).**
+
+1. Right-click the downloaded ZIP and choose **Extract All**.
+2. Open the extracted folder and double-click **Install-Windows.cmd**.
+3. Allow any prerequisite installers, then finish Codex sign-in in your browser. MommyCodex opens when setup finishes.
+
+Setup installs the app and any missing Node.js, Git, and Codex. Existing tools and login are reused. **No Rust, Visual Studio, pnpm, or build commands are needed.** An internet connection is required. Windows App Installer (`winget`) handles missing Node.js and Git; if it is unavailable, setup explains how to install it from the Microsoft Store. The app installer also supplies WebView2 if needed. The Windows app is unsigned.
+
+Already downloaded the source repository? Double-click **Install-Windows.cmd** in its root folder; it downloads the prebuilt app instead of compiling it. If you already have the prerequisites, the standalone `-setup.exe` is also available in the **[desktop releases](https://github.com/lobolobo12/mommycodex/releases)**.
+
+On Apple Silicon Macs, download the Mac ZIP from Releases, extract it, and move the app to Applications. Intel Mac users can build from source. Google Chrome is optional for browser previews; GitHub CLI is optional for the issue/PR workflow.
 
 ## Project workflows
 
@@ -53,7 +63,7 @@ React + TypeScript webview ── invoke / Channel ──▶ Rust CodexClient �
 ## Requirements
 
 - macOS 12+ (Apple Silicon or Intel), or Windows 10/11 x64.
-- Node 22.12+ and Codex CLI installed and logged in (`npm i -g @openai/codex`, then `codex login`). Restart the app after installing command-line tools so it sees the updated PATH.
+- The easy Windows setup handles Node.js, Git, Codex, and sign-in. For manual installation or macOS: Node 22.12+ and Codex CLI installed and logged in (`npm i -g @openai/codex`, then `codex login`). Restart the app after installing command-line tools so it sees the updated PATH.
 - Google Chrome for the shared browser preview; Git and authenticated GitHub CLI for GitHub workflows.
 - Building from source also requires pnpm, Rust, and Xcode Command Line Tools on Mac, or Visual Studio C++ Build Tools with the Windows SDK on Windows.
 
@@ -81,7 +91,7 @@ pnpm tauri dev
 pnpm tauri build --bundles nsis
 ```
 
-The installer appears in `src-tauri/target/release/bundle/nsis/`. The Windows workflow is configured to build and test on a Windows runner, install the package, and check the actual WebView2 app. Build outputs stay out of Git.
+The installer appears in `src-tauri/target/release/bundle/nsis/`. Run `powershell.exe -NoProfile -File scripts/package-windows.ps1` to create the easy setup ZIP and checksums in `output/windows-release/`. The Windows workflow validates setup with isolated fixtures, installs through the packaged setup helper, and checks the actual WebView2 app before uploading release artifacts. Interactive Codex sign-in is skipped in CI. Build outputs stay out of Git.
 
 Windows preview/check commands run in `cmd.exe`, so use commands such as `npm run dev` and `npm test`, or explicitly invoke PowerShell when needed. Codex runs natively; the app resolves npm's `codex.cmd` to its packaged `codex.exe`. Both companions keep their own Fish voices. Save your own Fish key on each computer; keys are never bundled or synced. Microphone input uses the default Windows device and requires desktop microphone access in Windows privacy settings. Audio hardware and microphone-to-Fish transcription still need a manual device check.
 

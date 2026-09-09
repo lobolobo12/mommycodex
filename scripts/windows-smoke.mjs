@@ -28,7 +28,12 @@ try {
  console.log('Installed Windows app opened and rendered the selected project in WebView2.');
  }
 } finally {
- await browser?.close();
- await new Promise(r=>{const stop=spawn('taskkill.exe',['/pid',String(child.pid),'/t','/f'],{stdio:'ignore'});stop.on('exit',r);stop.on('error',r);});
- await rm(dir,{recursive:true,force:true});
+ // Kill the tree while the app still owns its WebView children, then allow Windows to release file handles.
+ if(child.pid)await new Promise(r=>{const stop=spawn('taskkill.exe',['/pid',String(child.pid),'/t','/f'],{stdio:'ignore'});stop.on('exit',r);stop.on('error',r);});
+ await browser?.close().catch(()=>{});
+ await rm(dir,{recursive:true,force:true,maxRetries:10,retryDelay:300}).catch(error=>{
+  if(!['EBUSY','EPERM','ENOTEMPTY'].includes(error.code))throw error;
+  // A locked runner temp profile is a cleanup warning, not a failed UI assertion.
+  console.warn(`Temporary WebView profile remains locked after cleanup retries: ${dir}`);
+ });
 }
